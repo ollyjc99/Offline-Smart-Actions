@@ -1,0 +1,16 @@
+{
+    "data": {
+      "record": {
+        "Pricebook2Id": "PB",
+        "Account2Id": 101,
+        "aforza__Inventory__c": 101
+      },
+      "related":{
+        "Account": [{"Name": "Test", "Customer_Segment__c": "", "Delivery_day__c": "Tuesday;Friday"}],
+        "OrderItem": [{"Id": 1, "TotalPrice": 30}],
+        "Product2": [{"Id": 1,"ProductCode": "000000019000000031", "MOV_06__c": 20}, {"Id": 2, "ProductCode": "000000019000000034", "MOV_06__c": 30}],
+        "PricebookEntry": [{"Id": "pbe1", "Product2Id": 1, "Pricebook2Id": "PB"}, {"Id": "pbe2", "Product2Id": 2, "Pricebook2Id": "PB"}],
+        "aforza__Inventory__c": [{"Name": "Inventory", "Id": 101}]
+      }
+    }
+  }
