@@ -7,10 +7,10 @@
         "EndDate": "2023-04-14"
       },
       "related":{
-        "Account": [{"Name": "Test", "Customer_Segment__c": "", "Delivery_Day__c": "Wednesday;Friday"}],
-        "OrderItem": [{"Id": 1, "TotalPrice": 30}],
-        "Product2": [{"Id": 1,"ProductCode": "000000019000000031", "MOV_06__c": 20}, {"Id": 2, "ProductCode": "000000019000000034", "MOV_06__c": 30}],
-        "PricebookEntry": [{"Id": "pbe1", "Product2Id": 1, "Pricebook2Id": "PB"}, {"Id": "pbe2", "Product2Id": 2, "Pricebook2Id": "PB"}],
+        "Account": [{"Name": "Test", "Customer_Segment__c": "", "Delivery_Day__c": "Wednesday;Thursday"}],
+        "OrderItem": [{"Id": 1, "TotalPrice": 19, "Product2Id": "Item"}],
+        "Product2": [{"Id": "Item","ProductCode": "001"},{"Id": "Standard","ProductCode": "000000019000000031", "MOV_06__c": 20}, {"Id": "OutOfRoute", "ProductCode": "000000019000000034", "MOV_06__c": 30}],
+        "PricebookEntry": [{"Id": "pbe3", "Product2Id": "Test", "Pricebook2Id": "PB", "ListPrice": 20},{"Id": "pbe1", "Product2Id": "Standard", "Pricebook2Id": "PB", "MOV_06__c": 20}, {"Id": "pbe2", "Product2Id": "OutOfRoute", "Pricebook2Id": "PB", "MOV_06__c": 30}],
         "aforza__Inventory__c": [{"Name": "Test 1", "Id": 1}, {"Name": "Test 2", "Id": 2}]
       }
     }
