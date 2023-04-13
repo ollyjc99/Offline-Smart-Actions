@@ -85,7 +85,7 @@ function runAction(payload) {
     if (manualError){
         data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}`;
     } else {
-        data.message = message + `\n\nNew Delivery Date:\n${record.EndDate}`;
+        data.message = message + `\n\nNew Delivery Date:${record.EndDate}`;
     }
     // Function to get the Standard and OutOfRoute delivery products
     function getStandardAndExtraProducts(product){
