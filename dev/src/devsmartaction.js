@@ -47,7 +47,8 @@ function runAction(payload) {
     }
     var standardDelivery = accountDeliveryDays.includes(dayName);
     if(standardDelivery) {
-        removeProduct(OrderItem, outOfRoutePbe, response);
+        // removeProduct(OrderItem, outOfRoutePbe, response);
+        removeProduct(outOfRoutePbe);
         // Order value exceeds threshold
         if(orderTotal >= standardThreshold) {
             message = 'Basket Exceeds Standard Delivery Threshold, no charge';
@@ -62,11 +63,14 @@ function runAction(payload) {
         }
     }
     else {
-        removeProduct(OrderItem, standardPbe, response);
+        // removeProduct(OrderItem, standardPbe, response);
+        removeProduct(standardPbe);
+
         // Order value exceeds threshold
         if(orderTotal >= outOfRouteThreshold) {
             message = 'Basket Exceeds Out Of Route Threshold, no charge';
-            removeProduct(OrderItem, outOfRoutePbe, response);
+            removeProduct(outOfRoutePbe);
+            // removeProduct(OrderItem, outOfRoutePbe, response);
         }
         else {
             message = 'Basket does not meet Out Of Route Threshold, delivery product added';
@@ -86,9 +90,9 @@ function runAction(payload) {
         data.reprice = false;
     }
     if (manualError){
-        data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}\n${JSON.stringify(OrderItem)}`;
+        data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}\n${orderTotal}`;
     } else {
-        data.message = message + `\n\nNew Delivery Date:${record.EndDate}\n${JSON.stringify(OrderItem)}`;
+        data.message = message + `\n\nNew Delivery Date:${record.EndDate}\n${orderTotal}`;
     }
     // Function to get the Standard and OutOfRoute delivery products
     function getStandardAndExtraProducts(product){
