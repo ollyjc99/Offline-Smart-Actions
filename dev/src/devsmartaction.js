@@ -13,7 +13,7 @@ function runAction(payload) {
     }
     // Find the standard / out of route products and grab the ids / and minimum order value thresholds
     Product2.forEach(getStandardAndExtraProducts);
-
+    PricebookEntry.forEach(getStandardAndExtraPBE);
     // Set the threshold to 0 if it's missing
     if(standardProductId && !standardThreshold) {
         standardThreshold = 0;
@@ -21,11 +21,10 @@ function runAction(payload) {
     if(outOfRouteProductId && !outOfRouteThreshold) {
         outOfRouteThreshold = 0;
     }
-    PricebookEntry.forEach(getStandardAndExtraPBE);
-    OrderItem.forEach(isStandardOrExtra);               // Sum order total
+    OrderItem.forEach(isStandardOrExtra);         // Sum order total
 
     // Decide delivery date.
-    let dt, notHoliday = false, dayName, manualError;
+    let dt, notHoliday, dayName, manualError;
     let deliveryDate = record.EndDate;
     let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     let accountDeliveryDays = Account.Delivery_Day__c.split(';');
@@ -52,11 +51,14 @@ function runAction(payload) {
         // Order value exceeds threshold
         if(orderTotal >= standardThreshold) {
             message = 'Basket Exceeds Standard Delivery Threshold, no charge';
-            removeProduct(OrderItem, standardPbe, response);
+            // removeProduct(OrderItem, standardPbe, response);
+            removeProduct(standardPbe);
+
         }
         else {
             message = 'Basket does not meet Standard Delivery Threshold, delivery product added';
-            putProduct(OrderItem, standardPbe, response);
+            // putProduct(OrderItem, standardPbe, response);
+            putProduct(standardPbe);
         }
     }
     else {
@@ -68,7 +70,8 @@ function runAction(payload) {
         }
         else {
             message = 'Basket does not meet Out Of Route Threshold, delivery product added';
-            putProduct(OrderItem, outOfRoutePbe, response);
+            // putProduct(OrderItem, outOfRoutePbe, response);
+            putProduct(outOfRoutePbe);
         }
     }
     if(response.orderChanged) {
@@ -83,19 +86,19 @@ function runAction(payload) {
         data.reprice = false;
     }
     if (manualError){
-        data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}`;
+        data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}\n${JSON.stringify(OrderItem)}`;
     } else {
-        data.message = message + `\n\nNew Delivery Date:${record.EndDate}`;
+        data.message = message + `\n\nNew Delivery Date:${record.EndDate}\n${JSON.stringify(OrderItem)}`;
     }
     // Function to get the Standard and OutOfRoute delivery products
     function getStandardAndExtraProducts(product){
         if(product.ProductCode == "000000019000000031") {
             standardProductId = product.Id;
-            standardThreshold = product['MOV_' + segment + '__c'];
+            // standardThreshold = product['MOV_' + segment + '__c'];
         }
         else if(product.ProductCode == "000000019000000034") {
             outOfRouteProductId = product.Id;
-            outOfRouteThreshold = product['MOV_' + segment + '__c'];
+            // outOfRouteThreshold = product['MOV_' + segment + '__c'];
         }
     }
     // Function to get the Standard and OutOfRoute delivery pricebook entries
@@ -103,9 +106,11 @@ function runAction(payload) {
         if(pbe.Pricebook2Id == Pricebook2Id) {
             if(pbe.Product2Id == standardProductId) {
                 standardPbe = pbe;
+                standardThreshold = pbe['MOV_' + segment + '__c'];
             }
             else if(pbe.Product2Id == outOfRouteProductId) {
                 outOfRoutePbe = pbe;
+                outOfRouteThreshold = pbe['MOV_' + segment + '__c'];
             }
         }
     }
@@ -136,38 +141,72 @@ function runAction(payload) {
         }
     }
     // Function to put Standard/OutOfRoute product in Basket
-    function putProduct(orderItems, pbe, response) {
+    function putProduct(pbe) {
         let index;
         // Check if product already in basket
-        for(let i in orderItems) {
-            if(orderItems[i].PricebookEntryId == pbe.Id) {
+        for(let i in OrderItem) {
+            if(OrderItem[i].PricebookEntryId == pbe.Id) {
                 index = i;
                 break;
             }
         }
         // Add it if missing
         if(!index) {
-            orderItems.push({PricebookEntryId : pbe.Id, Quantity : 1});
+            OrderItem.push({Product2Id: pbe.Product2Id, PricebookEntryId : pbe.Id, Quantity : 1});
             response.orderChanged = true;
             response.reprice = true;
         }
         // Fix quantity to 1
-        else if(orderItems[index].Quantity != 1) {
-            orderItems[index].Quantity = 1;
+        else if(OrderItem[index].Quantity != 1) {
+            OrderItem[index].Quantity = 1;
             response.orderChanged = true;
         }
     }
+    // function putProduct(orderItems, pbe, response) {
+    //     let index;
+    //     // Check if product already in basket
+    //     for(let i in orderItems) {
+    //         if(orderItems[i].PricebookEntryId == pbe.Id) {
+    //             index = i;
+    //             break;
+    //         }
+    //     }
+    //     // Add it if missing
+    //     if(!index) {
+    //         orderItems.push({PricebookEntryId : pbe.Id, Quantity : 1});
+    //         response.orderChanged = true;
+    //         response.reprice = true;
+    //     }
+    //     // Fix quantity to 1
+    //     else if(orderItems[index].Quantity != 1) {
+    //         orderItems[index].Quantity = 1;
+    //         response.orderChanged = true;
+    //     }
+    // }
     // Function to remove Standard/OutOfRoute product in Basket
-    function removeProduct(orderItems, pbe, response) {
+    // function removeProduct(orderItems, pbe, response) {
+    //     let index;
+    //     for(let i in orderItems) {
+    //         if(orderItems[i].PricebookEntryId == pbe.Id) {
+    //             index = i;
+    //             break;
+    //         }
+    //     }
+    //     if(index) {
+    //         orderItems.splice(index, 1);
+    //         response.orderChanged = true;
+    //     }
+    // }
+    function removeProduct(pbe) {
         let index;
-        for(let i in orderItems) {
-            if(orderItems[i].PricebookEntryId == pbe.Id) {
+        for(let i in OrderItem) {
+            if(OrderItem[i].PricebookEntryId == pbe.Id) {
                 index = i;
                 break;
             }
         }
         if(index) {
-            orderItems.splice(index, 1);
+            OrderItem.splice(index, 1);
             response.orderChanged = true;
         }
     }
