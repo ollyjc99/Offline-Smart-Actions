@@ -166,41 +166,6 @@ function runAction(payload) {
             response.orderChanged = true;
         }
     }
-    // function putProduct(orderItems, pbe, response) {
-    //     let index;
-    //     // Check if product already in basket
-    //     for(let i in orderItems) {
-    //         if(orderItems[i].PricebookEntryId == pbe.Id) {
-    //             index = i;
-    //             break;
-    //         }
-    //     }
-    //     // Add it if missing
-    //     if(!index) {
-    //         orderItems.push({PricebookEntryId : pbe.Id, Quantity : 1});
-    //         response.orderChanged = true;
-    //         response.reprice = true;
-    //     }
-    //     // Fix quantity to 1
-    //     else if(orderItems[index].Quantity != 1) {
-    //         orderItems[index].Quantity = 1;
-    //         response.orderChanged = true;
-    //     }
-    // }
-    // Function to remove Standard/OutOfRoute product in Basket
-    // function removeProduct(orderItems, pbe, response) {
-    //     let index;
-    //     for(let i in orderItems) {
-    //         if(orderItems[i].PricebookEntryId == pbe.Id) {
-    //             index = i;
-    //             break;
-    //         }
-    //     }
-    //     if(index) {
-    //         orderItems.splice(index, 1);
-    //         response.orderChanged = true;
-    //     }
-    // }
     function removeProduct(pbe) {
         let index;
         for(let i in OrderItem) {
