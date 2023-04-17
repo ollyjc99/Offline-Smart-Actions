@@ -90,19 +90,19 @@ function runAction(payload) {
         data.reprice = false;
     }
     if (manualError){
-        data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}\n${orderTotal}`;
+        data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}`;
     } else {
-        data.message = message + `\n\nNew Delivery Date:${record.EndDate}\n${orderTotal}`;
+        data.message = message + `\n\nNew Delivery Date:${record.EndDate}`;
     }
     // Function to get the Standard and OutOfRoute delivery products
     function getStandardAndExtraProducts(product){
         if(product.ProductCode == "000000019000000031") {
             standardProductId = product.Id;
-            // standardThreshold = product['MOV_' + segment + '__c'];
+            standardThreshold = product['MOV_' + segment + '__c'];
         }
         else if(product.ProductCode == "000000019000000034") {
             outOfRouteProductId = product.Id;
-            // outOfRouteThreshold = product['MOV_' + segment + '__c'];
+            outOfRouteThreshold = product['MOV_' + segment + '__c'];
         }
     }
     // Function to get the Standard and OutOfRoute delivery pricebook entries
@@ -110,11 +110,15 @@ function runAction(payload) {
         if(pbe.Pricebook2Id == Pricebook2Id) {
             if(pbe.Product2Id == standardProductId) {
                 standardPbe = pbe;
-                standardThreshold = pbe['MOV_' + segment + '__c'];
+                if(pbe['MOV_' + segment + '__c']){
+                    standardThreshold = pbe['MOV_' + segment + '__c'];  // Override threshold with pricebook entry
+                }
             }
             else if(pbe.Product2Id == outOfRouteProductId) {
                 outOfRoutePbe = pbe;
-                outOfRouteThreshold = pbe['MOV_' + segment + '__c'];
+                if(pbe['MOV_' + segment + '__c']){
+                    outOfRouteThreshold = pbe['MOV_' + segment + '__c'];    // Override threshold with pricebook entry
+                }
             }
         }
     }
@@ -127,8 +131,10 @@ function runAction(payload) {
         //     hasOutOfRoute = true;
         // }
         // Sum up total order value ignoring delivery products
-        if(orderItem.TotalPrice && !((standardProductId && orderItem.PricebookEntryId == standardPbe.Id) || (outOfRouteProductId && orderItem.PricebookEntryId == outOfRoutePbe.Id))){
-            orderTotal += orderItem.TotalPrice;
+        
+        if(orderItem.Quantity && orderItem.UnitPrice && !((orderItem.Product2Id == standardProductId) || (orderItem.Product2Id == outOfRouteProductId))){
+        // else if(orderItem.Quantity && orderItem.UnitPrice){
+            orderTotal += orderItem.UnitPrice * orderItem.Quantity;
         }
     }
     // Function to return an incremental delivery date
