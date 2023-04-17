@@ -2,6 +2,7 @@ function runAction(payload) {
     const { data: { record : {Pricebook2Id}, record, related: {Account: [Account], OrderItem, Product2, PricebookEntry, aforza__Inventory__c: [Inventory]}}, data } = payload; // Deconstruct payload
     let standardProductId, standardThreshold, standardPbe, outOfRouteProductId, outOfRouteThreshold, outOfRoutePbe;
     const holidays = {'2023-04-18': ['All'],'2023-04-07': ['All'], '2023-12-25': ['All'], '2023-12-08': ['All'], '2023-12-01': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-08-15': ['All'], '2023-06-10': ['All'], '2023-06-08': ['All'], '2023-04-25': ['All', 'Warehouse - Alcains'], '2023-05-01': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-05-22': ['Warehouse - Leiria'], '2023-06-13': ['Warehouse - Camarate'], '2023-05-23': ['Warehouse - Portalegre'], '2023-06-24': ['Warehouse - Porto'], '2023-06-29': ['Warehouse - Setúbal', 'Warehouse - Évora', 'Warehouse - Bombarral'], '2023-09-03': ['Warehouse - Algoz'], '2023-05-18': ['Warehouse - Beja'], '2023-07-04': ['Warehouse - Coimbra'], '2023-09-07': ['Warehouse - Faro']};
+    // Includes fake delivery date '2023-04-18' for testing purposes
     let orderTotal = 0;
     let response = {orderChanged : false, reprice : false};
     let message;
@@ -29,6 +30,7 @@ function runAction(payload) {
     let deliveryDate = record.EndDate;
     let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     let accountDeliveryDays = Account.Delivery_Day__c.split(';');
+
     if(!deliveryDate) {                                                // If no Delivery Date has been selected, calculate one
         dt = incrementDeliveryDate(new Date());                        // avoiding holidays and including account delivery days
         dayName = days[dt.getDay()];
@@ -46,7 +48,7 @@ function runAction(payload) {
             manualError = true;                                         // If a Delivery Date has been selected by a rep, flag it
         }                                                               // if it is on a public holiday or non delivery day
     }
-    var standardDelivery = accountDeliveryDays.includes(dayName);
+    var standardDelivery = accountDeliveryDays.includes(dayName) || ["PT16", "PT17", "PT25"].includes(Account.Typology__c);
     if(standardDelivery) {
         removeProduct(outOfRoutePbe);
         // Order value exceeds threshold
@@ -83,7 +85,7 @@ function runAction(payload) {
         data.reprice = false;
     }
     if (manualError){
-        data.error = message + `\n\nDelivery date on\nholiday: ${record.EndDate}`;
+        data.error = message + `\n\nDelivery date on holiday: ${record.EndDate}`;
     } else {
         data.message = message + `\n\nDelivery Date: ${record.EndDate}`;
     }
@@ -148,7 +150,7 @@ function runAction(payload) {
         }
         // Add it if missing
         if(!index) {
-            OrderItem.push({Product2Id: pbe.Product2Id, PricebookEntryId : pbe.Id, Quantity : 1});
+            OrderItem.push({Product2Id: pbe.Product2Id, PricebookEntryId : pbe.Id, Quantity : 1, UnitPrice: 0, aforza__Type__c: "Product" });
             response.orderChanged = true;
             response.reprice = true;
         }
