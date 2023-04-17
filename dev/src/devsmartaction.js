@@ -1,7 +1,7 @@
 function runAction(payload) {
     const { data: { record : {Pricebook2Id, aforza__Inventory__c: InventoryId}, record, related: {Account: [Account], OrderItem, Product2, PricebookEntry, aforza__Inventory__c: [Inventory]}}, data } = payload; // Deconstruct payload
     let standardProductId, standardThreshold, standardPbe, outOfRouteProductId, outOfRouteThreshold, outOfRoutePbe;
-    const holidays = {'2023-04-07': ['All'], '2023-12-25': ['All'], '2023-12-08': ['All'], '2023-12-01': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-08-15': ['All'], '2023-06-10': ['All'], '2023-06-08': ['All'], '2023-04-25': ['All', 'Warehouse - Alcains'], '2023-05-01': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-05-22': ['Warehouse - Leiria'], '2023-06-13': ['Warehouse - Camarate'], '2023-05-23': ['Warehouse - Portalegre'], '2023-06-24': ['Warehouse - Porto'], '2023-06-29': ['Warehouse - Setúbal', 'Warehouse - Évora', 'Warehouse - Bombarral'], '2023-09-03': ['Warehouse - Algoz'], '2023-05-18': ['Warehouse - Beja'], '2023-07-04': ['Warehouse - Coimbra'], '2023-09-07': ['Warehouse - Faro']};
+    const holidays = {'2023-04-18': ['All'],'2023-04-07': ['All'], '2023-12-25': ['All'], '2023-12-08': ['All'], '2023-12-01': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-08-15': ['All'], '2023-06-10': ['All'], '2023-06-08': ['All'], '2023-04-25': ['All', 'Warehouse - Alcains'], '2023-05-01': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-05-22': ['Warehouse - Leiria'], '2023-06-13': ['Warehouse - Camarate'], '2023-05-23': ['Warehouse - Portalegre'], '2023-06-24': ['Warehouse - Porto'], '2023-06-29': ['Warehouse - Setúbal', 'Warehouse - Évora', 'Warehouse - Bombarral'], '2023-09-03': ['Warehouse - Algoz'], '2023-05-18': ['Warehouse - Beja'], '2023-07-04': ['Warehouse - Coimbra'], '2023-09-07': ['Warehouse - Faro']};
     let orderTotal = 0;
     let response = {orderChanged : false, reprice : false};
     let message;
@@ -52,29 +52,24 @@ function runAction(payload) {
         // Order value exceeds threshold
         if(orderTotal >= standardThreshold) {
             message = 'Basket Exceeds Standard Delivery Threshold, no charge';
-            // removeProduct(OrderItem, standardPbe, response);
             removeProduct(standardPbe);
 
         }
         else {
             message = 'Basket does not meet Standard Delivery Threshold, delivery product added';
-            // putProduct(OrderItem, standardPbe, response);
             putProduct(standardPbe);
         }
     }
     else {
-        // removeProduct(OrderItem, standardPbe, response);
         removeProduct(standardPbe);
 
         // Order value exceeds threshold
         if(orderTotal >= outOfRouteThreshold) {
             message = 'Basket Exceeds Out Of Route Threshold, no charge';
             removeProduct(outOfRoutePbe);
-            // removeProduct(OrderItem, outOfRoutePbe, response);
         }
         else {
             message = 'Basket does not meet Out Of Route Threshold, delivery product added';
-            // putProduct(OrderItem, outOfRoutePbe, response);
             putProduct(outOfRoutePbe);
         }
     }
@@ -90,9 +85,9 @@ function runAction(payload) {
         data.reprice = false;
     }
     if (manualError){
-        data.error = message + `\n\nInvalid Delivery Date:\n${record.EndDate}`;
+        data.error = message + `\n\nDelivery date on\nholiday: ${record.EndDate}`;
     } else {
-        data.message = message + `\n\nNew Delivery Date:${record.EndDate}`;
+        data.message = message + `\n\nDelivery Date: ${record.EndDate}`;
     }
     // Function to get the Standard and OutOfRoute delivery products
     function getStandardAndExtraProducts(product){
