@@ -34,17 +34,17 @@ function runAction(payload) {
     if(!deliveryDate) {                                                // If no Delivery Date has been selected, calculate one
         dt = incrementDeliveryDate(new Date());                        // avoiding holidays and including account delivery days
         dayName = days[dt.getDay()];
-        notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
+        notHoliday = checkHolidays(dt);
         while (!notHoliday){
             dt = incrementDeliveryDate(dt);
             dayName = days[dt.getDay()];
-            notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
+            notHoliday = checkHolidays(dt);
         }
         record.EndDate = dt.toISOString().substring(0,10);              // Set record delivery date
     } else {
         dt = new Date(deliveryDate);
         dayName = days[dt.getDay()];
-        if (!(checkHolidays(dt) && accountDeliveryDays.includes(dayName))){
+        if (!(checkHolidays(dt))){
             manualError = true;                                         // If a Delivery Date has been selected by a rep, flag it
         }                                                               // if it is on a public holiday or non delivery day
     }
