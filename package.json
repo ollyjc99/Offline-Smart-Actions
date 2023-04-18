@@ -1,0 +1,10 @@
+{
+    "name": "offline-engines-demo",
+    "scripts": {
+      "build:development": "esbuild src/* --outdir=public --target=es2015",
+      "build:production": "esbuild src/* --outdir=public --target=es2015 --minify"
+    },
+    "devDependencies": {
+      "esbuild": "^0.13.13"
+    }
+  }
