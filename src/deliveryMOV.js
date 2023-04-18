@@ -34,11 +34,11 @@ function runAction(payload) {
     if(!deliveryDate) {                                                // If no Delivery Date has been selected, calculate one
         dt = incrementDeliveryDate(new Date());                        // avoiding holidays and including account delivery days
         dayName = days[dt.getDay()];
-        notHoliday = checkHolidays(dt);
+        notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
         while (!notHoliday){
             dt = incrementDeliveryDate(dt);
             dayName = days[dt.getDay()];
-            notHoliday = checkHolidays(dt);
+            notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
         }
         record.EndDate = dt.toISOString().substring(0,10);              // Set record delivery date
     } else {
@@ -85,7 +85,7 @@ function runAction(payload) {
         data.reprice = false;
     }
     if (manualError){
-        data.error = message + `\n\nDelivery date on holiday: ${record.EndDate}`;
+        data.error = message + `\n\nCaution: Delivery date on holiday: ${record.EndDate}\u{2757} `;
     } else {
         data.message = message + `\n\nDelivery Date: ${record.EndDate}`;
     }
@@ -119,9 +119,8 @@ function runAction(payload) {
     }
     // Function to calculate the order total excluding delivery products
     function isStandardOrExtra(orderItem){
-        // Sum up total order value ignoring delivery products
-        
-        if(orderItem.Quantity && orderItem.UnitPrice && !((orderItem.Product2Id == standardProductId) || (orderItem.Product2Id == outOfRouteProductId))){
+        // Sum up total order value ignoring delivery products   
+        if(orderItem.Quantity && orderItem.UnitPrice && !(orderItem.Product2Id == standardProductId || orderItem.Product2Id == outOfRouteProductId)){
             orderTotal += orderItem.UnitPrice * orderItem.Quantity;
         }
     }
