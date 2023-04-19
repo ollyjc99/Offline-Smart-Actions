@@ -23,7 +23,8 @@ function runAction(payload) {
     if(outOfRouteProductId && !outOfRouteThreshold) {
         outOfRouteThreshold = 0;
     }
-    OrderItem.forEach(isStandardOrExtra);   // Sum order total
+    // Sum order total
+    OrderItem.forEach(sumOrderTotal);
 
     // Decide delivery date.
     let dt, notHoliday, dayName, manualError;
@@ -85,9 +86,9 @@ function runAction(payload) {
         data.reprice = false;
     }
     if (manualError){
-        data.error = message + `\n\nCaution: Delivery date on holiday: ${record.EndDate}\u{2757} `;
+        data.error = message + `\n\nCaution: Delivery date on holiday: ${record.EndDate}\u{2757}\nTotal: ${orderTotal}`;
     } else {
-        data.message = message + `\n\nDelivery Date: ${record.EndDate}`;
+        data.message = message + `\n\nDelivery Date: ${record.EndDate}\nTotal: ${orderTotal}`;
     }
     // Function to get the Standard and OutOfRoute delivery products
     function getStandardAndExtraProducts(product){
@@ -118,9 +119,12 @@ function runAction(payload) {
         }
     }
     // Function to calculate the order total excluding delivery products
-    function isStandardOrExtra(orderItem){
-        // Sum up total order value ignoring delivery products   
-        if(orderItem.Quantity && orderItem.UnitPrice && !(orderItem.Product2Id == standardProductId || orderItem.Product2Id == outOfRouteProductId)){
+    function sumOrderTotal(orderItem){
+        // Sum up total order value ignoring delivery products  
+        // if ((standardProductId && orderItem.PricebookEntryId == standardPbe.Id) || (outOfRouteProductId && orderItem.PricebookEntryId == outOfRoutePbe.Id)){
+            
+        // }
+        if(orderItem.Quantity && orderItem.UnitPrice && orderItem.aforza__Type__c != "Tax" && !(orderItem.PricebookEntryId == standardPbe.Id || orderItem.PricebookEntryId == outOfRoutePbe.Id)){
             orderTotal += orderItem.UnitPrice * orderItem.Quantity;
         }
     }
