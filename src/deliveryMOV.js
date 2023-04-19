@@ -1,6 +1,6 @@
 function runAction(payload) {
     const { data: { record : {Pricebook2Id}, record, related: {Account: [Account], OrderItem, Product2, PricebookEntry, aforza__Inventory__c: [Inventory]}}, data } = payload; // Deconstruct payload
-    if(record.Order_Record_Type__c != 'Devolution'){ 
+    if(record.Type != 'YDEV'){ 
         let standardProductId, standardThreshold, standardPbe, outOfRouteProductId, outOfRouteThreshold, outOfRoutePbe;
         const holidays = {'2023-04-07': ['All'], '2023-12-25': ['All'], '2023-12-08': ['All'], '2023-12-01': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-08-15': ['All'], '2023-06-10': ['All'], '2023-06-08': ['All'], '2023-04-25': ['All', 'Warehouse - Alcains'], '2023-05-01': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-05-22': ['Warehouse - Leiria'], '2023-06-13': ['Warehouse - Camarate'], '2023-05-23': ['Warehouse - Portalegre'], '2023-06-24': ['Warehouse - Porto'], '2023-06-29': ['Warehouse - Setúbal', 'Warehouse - Évora', 'Warehouse - Bombarral'], '2023-09-03': ['Warehouse - Algoz'], '2023-05-18': ['Warehouse - Beja'], '2023-07-04': ['Warehouse - Coimbra'], '2023-09-07': ['Warehouse - Faro']};
         let orderTotal = 0;
@@ -120,7 +120,7 @@ function runAction(payload) {
         }
         // Function to calculate the order total excluding delivery products
         function sumOrderTotal(orderItem){
-            // Sum up total order value ignoring delivery products  
+            // Sum up total order value ignoring delivery products and tax
             if(orderItem.Quantity && orderItem.UnitPrice && orderItem.aforza__Type__c != "Tax" && !(orderItem.PricebookEntryId == standardPbe.Id || orderItem.PricebookEntryId == outOfRoutePbe.Id)){
                 orderTotal += orderItem.UnitPrice * orderItem.Quantity;
             }
@@ -174,7 +174,7 @@ function runAction(payload) {
             }
         }
     } else {
-        data.message = 'No MOV for Devolution order type';
+        data.message = 'No Minumum Order Value for Devolution order type \u{2714}';
     }
     return payload;
 }
