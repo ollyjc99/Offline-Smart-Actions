@@ -1,5 +1,4 @@
 function runAction(payload) {
-  try {
     const { record: {TotalAmount}, related : {Account :{aforza__Credit_Amount__c : CreditLimit}} } = payload.data;
 
     if (CreditLimit === null || CreditLimit === undefined) {
@@ -14,9 +13,6 @@ function runAction(payload) {
       );
     }
     payload.data.message = `✓ Order total ${TotalAmount} is within credit limit of ${CreditLimit}`;
-  } catch (error) {
-    payload.data.error = error?.message;
-  }
 
   return payload;
 }
