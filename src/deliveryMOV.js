@@ -35,17 +35,19 @@ function runAction(payload) {
         if(!deliveryDate) {                                                // If no Delivery Date has been selected, calculate one
             dt = incrementDeliveryDate(new Date());                        // avoiding holidays and including account delivery days
             dayName = days[dt.getDay()];
-            notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
+            // notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
+            notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
             while (!notHoliday){
                 dt = incrementDeliveryDate(dt);
                 dayName = days[dt.getDay()];
-                notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
+                // notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
+                notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
             }
             record.EndDate = dt.toISOString().substring(0,10);              // Set record delivery date
         } else {
             dt = new Date(deliveryDate);
             dayName = days[dt.getDay()];
-            if (!(checkHolidays(dt))){
+            if (!(checkHolidays(dt) || ['Saturday', 'Sunday'].includes(dayName))){
                 manualError = true;                                         // If a Delivery Date has been selected by a rep, flag it
             }                                                               // if it is on a public holiday or non delivery day
         }
@@ -54,11 +56,13 @@ function runAction(payload) {
             removeProduct(outOfRoutePbe);
             // Order value exceeds threshold
             if(orderTotal >= standardThreshold) {
-                message = 'Basket Exceeds Standard Delivery Threshold, no charge';
+                // Basket Exceeds Standard Delivery Threshold, no charge
+                message = 'A cesta excede o limite de entrega padrão, sem custo';
                 removeProduct(standardPbe);
             }
             else {
-                message = 'Basket does not meet Standard Delivery Threshold, delivery product added';
+                // Basket does not meet Standard Delivery Threshold, delivery product added
+                message = 'A cesta não atende ao limite de entrega padrão, produto de entrega adicionado';
                 putProduct(standardPbe);
             }
         }
@@ -66,11 +70,13 @@ function runAction(payload) {
             removeProduct(standardPbe);
             // Order value exceeds threshold
             if(orderTotal >= outOfRouteThreshold) {
-                message = 'Basket Exceeds Out Of Route Threshold, no charge';
+                // Basket Exceeds Out Of Route Threshold, no charge
+                message = 'A cesta excede o limite fora da rota, sem custo';
                 removeProduct(outOfRoutePbe);
             }
             else {
-                message = 'Basket does not meet Out Of Route Threshold, delivery product added';
+                // Basket does not meet Out Of Route Threshold, delivery product added
+                message = 'A cesta não atende ao limite fora da rota, produto de entrega adicionado';
                 putProduct(outOfRoutePbe);
             }
         }
@@ -86,9 +92,11 @@ function runAction(payload) {
             data.reprice = false;
         }
         if (manualError){
-            data.message = message + `\n\nCaution: Delivery date on holiday: ${record.EndDate}\u{2757}`;
+            // Warning, selected delivery date is a holiday or weekend
+            data.message = message + `\n\nAviso, a data selecionada para entrega é um feriado ou um fim de semana \u{2757}`;
         } else {
-            data.message = message + `\n\nDelivery Date: ${record.EndDate}`;
+            // New delivery date
+            data.message = message + `\n\nNova data de entrega: ${record.EndDate}`;
         }
         // Function to get the Standard and OutOfRoute delivery products
         function getStandardAndExtraProducts(product){
@@ -174,7 +182,8 @@ function runAction(payload) {
             }
         }
     } else {
-        data.message = 'No Minumum Order Value for Devolution order type \u{2714}';
+        // No Minumum Order Value for Devolution order type
+        data.message = 'Nenhum valor mínimo de pedido para o tipo de pedido de devolução \u{2714}';
     }
     return payload;
 }
