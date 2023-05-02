@@ -1,2 +1,3 @@
 .DS_Store
 movDebug.js
+node_modules/
