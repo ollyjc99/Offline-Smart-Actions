@@ -44,6 +44,7 @@ function runAction(payload) {
                 notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
             }
             record.EndDate = dt.toISOString().substring(0,10);              // Set record delivery date
+            response.orderChanged = true;
         } else {
             dt = new Date(deliveryDate);
             dayName = days[dt.getDay()];
