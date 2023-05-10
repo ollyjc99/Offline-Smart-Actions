@@ -103,11 +103,9 @@ function runAction(payload) {
         function getStandardAndExtraProducts(product){
             if(product.ProductCode == "000000019000000031") {
                 standardProductId = product.Id;
-                standardThreshold = product['MOV_' + segment + '__c'];
             }
             else if(product.ProductCode == "000000019000000034") {
                 outOfRouteProductId = product.Id;
-                outOfRouteThreshold = product['MOV_' + segment + '__c'];
             }
         }
         // Function to get the Standard and OutOfRoute delivery pricebook entries
