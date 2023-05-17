@@ -1,6 +1,5 @@
 function runAction(payload) {
     const { data: { record : {Pricebook2Id}, record, related: {Account: [Account], OrderItem, Product2, PricebookEntry, aforza__Inventory__c: [Inventory]}}, data } = payload; // Deconstruct payload
-    if(record.Type != 'YDEV'){ 
         let standardProductId, standardThreshold, standardPbe, outOfRouteProductId, outOfRouteThreshold, outOfRoutePbe;
         const holidays = {'2023-04-07': ['All'], '2023-12-25': ['All'], '2023-12-08': ['All'], '2023-12-01': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-08-15': ['All'], '2023-06-10': ['All'], '2023-06-08': ['All'], '2023-04-25': ['All', 'Warehouse - Alcains'], '2023-05-01': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-05-22': ['Warehouse - Leiria'], '2023-06-13': ['Warehouse - Camarate'], '2023-05-23': ['Warehouse - Portalegre'], '2023-06-24': ['Warehouse - Porto'], '2023-06-29': ['Warehouse - Setúbal', 'Warehouse - Évora', 'Warehouse - Bombarral'], '2023-09-03': ['Warehouse - Algoz'], '2023-05-18': ['Warehouse - Beja'], '2023-07-04': ['Warehouse - Coimbra'], '2023-09-07': ['Warehouse - Faro']};
         let orderTotal = 0;
@@ -35,12 +34,10 @@ function runAction(payload) {
         if(!deliveryDate) {                                                // If no Delivery Date has been selected, calculate one
             dt = incrementDeliveryDate(new Date());                        // avoiding holidays and including account delivery days
             dayName = days[dt.getDay()];
-            // notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
             notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
             while (!notHoliday){
                 dt = incrementDeliveryDate(dt);
                 dayName = days[dt.getDay()];
-                // notHoliday = checkHolidays(dt) && !['Saturday', 'Sunday'].includes(dayName);
                 notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
             }
             record.EndDate = dt.toISOString().substring(0,10);              // Set record delivery date
@@ -48,50 +45,57 @@ function runAction(payload) {
         } else {
             dt = new Date(deliveryDate);
             dayName = days[dt.getDay()];
-            if (!(checkHolidays(dt) || ['Saturday', 'Sunday'].includes(dayName))){
+            if (!checkHolidays(dt)|| ['Saturday', 'Sunday'].includes(dayName)){
                 manualError = true;                                         // If a Delivery Date has been selected by a rep, flag it
-            }                                                               // if it is on a public holiday or non delivery day
+            } 
+                                                                            // if it is on a public holiday or non delivery day
         }
-        var standardDelivery = accountDeliveryDays.includes(dayName) || ["PT16", "PT17", "PT25"].includes(Account.Typology__c);
-        if(standardDelivery) {
-            removeProduct(outOfRoutePbe);
-            // Order value exceeds threshold
-            if(orderTotal >= standardThreshold) {
-                // Basket Exceeds Standard Delivery Threshold, no charge
-                message = 'A cesta excede o limite de entrega padrão, sem custo';
-                removeProduct(standardPbe);
-            }
-            else {
-                // Basket does not meet Standard Delivery Threshold, delivery product added
-                message = 'A cesta não atende ao limite de entrega padrão, produto de entrega adicionado';
-                putProduct(standardPbe);
-            }
-        }
-        else {
-            removeProduct(standardPbe);
-            // Order value exceeds threshold
-            if(orderTotal >= outOfRouteThreshold) {
-                // Basket Exceeds Out Of Route Threshold, no charge
-                message = 'A cesta excede o limite fora da rota, sem custo';
+        if(record.Type != 'YDEV'){ 
+            var standardDelivery = accountDeliveryDays.includes(dayName) || ["PT16", "PT17", "PT25"].includes(Account.Typology__c);
+            if(standardDelivery) {
+                record.Shipping_Conditions__c = 'ZA';
                 removeProduct(outOfRoutePbe);
+                // Order value exceeds threshold
+                if(orderTotal >= standardThreshold) {
+                    // Basket Exceeds Standard Delivery Threshold, no charge
+                    message = 'A cesta excede o limite de entrega padrão, sem custo';
+                    removeProduct(standardPbe);
+                }
+                else {
+                    // Basket does not meet Standard Delivery Threshold, delivery product added
+                    message = 'A cesta não atende ao limite de entrega padrão, produto de entrega adicionado';
+                    putProduct(standardPbe);
+                }
             }
             else {
-                // Basket does not meet Out Of Route Threshold, delivery product added
-                message = 'A cesta não atende ao limite fora da rota, produto de entrega adicionado';
-                putProduct(outOfRoutePbe);
+                record.Shipping_Conditions__c = 'ZD';
+                removeProduct(standardPbe);
+                // Order value exceeds threshold
+                if(orderTotal >= outOfRouteThreshold) {
+                    // Basket Exceeds Out Of Route Threshold, no charge
+                    message = 'A cesta excede o limite fora da rota, sem custo';
+                    removeProduct(outOfRoutePbe);
+                }
+                else {
+                    // Basket does not meet Out Of Route Threshold, delivery product added
+                    message = 'A cesta não atende ao limite fora da rota, produto de entrega adicionado';
+                    putProduct(outOfRoutePbe);
+                }
             }
+        } else {
+            data.message = '';
         }
         if(response.orderChanged) {
             data.updateDeviceData = {
                 Order: true,
                 OrderItem: true
             }
-            data.reprice = response.reprice;
+            data.reprice = true;
         }
-        else {
-            data.updateDeviceData = false;
-            data.reprice = false;
-        }
+        // else {
+        //     data.updateDeviceData = false;
+        //     data.reprice = false;
+        // }
         if (manualError){
             // Warning, selected delivery date is a holiday or weekend
             data.message = message + `\n\nAviso, a data selecionada para entrega é um feriado ou um fim de semana \u{2757}`;
@@ -113,15 +117,11 @@ function runAction(payload) {
             if(pbe.Pricebook2Id == Pricebook2Id) {
                 if(pbe.Product2Id == standardProductId) {
                     standardPbe = pbe;
-                    if(pbe['MOV_' + segment + '__c']){
-                        standardThreshold = pbe['MOV_' + segment + '__c'];  // Override threshold with pricebook entry
-                    }
+                    standardThreshold = pbe['MOV_' + segment + '__c'];  // Override threshold with pricebook entry
                 }
                 else if(pbe.Product2Id == outOfRouteProductId) {
                     outOfRoutePbe = pbe;
-                    if(pbe['MOV_' + segment + '__c']){
-                        outOfRouteThreshold = pbe['MOV_' + segment + '__c'];    // Override threshold with pricebook entry
-                    }
+                    outOfRouteThreshold = pbe['MOV_' + segment + '__c'];    // Override threshold with pricebook entry
                 }
             }
         }
@@ -179,10 +179,6 @@ function runAction(payload) {
                 OrderItem.splice(index, 1);
                 response.orderChanged = true;
             }
-        }
-    } else {
-        // No Minumum Order Value for Devolution order type
-        data.message = 'Nenhum valor mínimo de pedido para o tipo de pedido de devolução \u{2714}';
-    }
+        } 
     return payload;
 }
