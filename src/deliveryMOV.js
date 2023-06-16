@@ -26,7 +26,7 @@ function runAction(payload) {
         OrderItem.forEach(sumOrderTotal);
 
         // Decide delivery date.
-        let dt, notHoliday, dayName, manualError;
+        let dt, isHoliday, dayName, manualError;
         let deliveryDate = record.EndDate;
         let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         let accountDeliveryDays = Account.Delivery_Day__c.split(';');
@@ -34,23 +34,33 @@ function runAction(payload) {
         if(!deliveryDate) {                                                // If no Delivery Date has been selected, calculate one
             dt = incrementDeliveryDate(new Date());                        // avoiding holidays and including account delivery days
             dayName = days[dt.getDay()];
-            notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
-            while (!notHoliday){
+            isHoliday = checkHolidays(dt) || !accountDeliveryDays.includes(dayName);
+            if (isHoliday && accountDeliveryDays.includes(dayName)){
+                dt = incrementDeliveryDate(dt);
+                dayName = days[dt.getDay()];                    // If new delivery date is a holiday and a delivery day then select next day
+                isHoliday = false;
+            }
+            while (isHoliday){
                 dt = incrementDeliveryDate(dt);
                 dayName = days[dt.getDay()];
-                notHoliday = checkHolidays(dt) && accountDeliveryDays.includes(dayName);
+                isHoliday = checkHolidays(dt) || !accountDeliveryDays.includes(dayName);
+                if (isHoliday && accountDeliveryDays.includes(dayName)){
+                    dt = incrementDeliveryDate(dt);
+                    dayName = days[dt.getDay()];                // If new delivery date is a holiday and a delivery day then select next day
+                    isHoliday = false;
+                }
             }
             record.EndDate = dt.toISOString().substring(0,10);              // Set record delivery date
             response.orderChanged = true;
         } else {
             dt = new Date(deliveryDate);
             dayName = days[dt.getDay()];
-            if (!checkHolidays(dt)|| ['Saturday', 'Sunday'].includes(dayName)){
+            if (checkHolidays(dt)|| ['Saturday', 'Sunday'].includes(dayName)){
                 manualError = true;                                         // If a Delivery Date has been selected by a rep, flag it
             } 
                                                                             // if it is on a public holiday or non delivery day
         }
-        if(record.Type != 'YDEV' || record.Type != 'YBLC'){ 
+        if(record.Type != 'YDEV' && record.Type != 'YBLC'){ 
             var standardDelivery = accountDeliveryDays.includes(dayName) || ["PT16", "PT17", "PT25"].includes(Account.Typology__c);
             if(standardDelivery) {
                 record.Shipping_Conditions__c = 'ZA';
@@ -138,11 +148,11 @@ function runAction(payload) {
         }
         // Function to check for holidays on delivery dates
         function checkHolidays(deliveryTime){
-            dateString = deliveryTime.toISOString().substring(0,10);                             // Will return true if dateString is not in Holidays keyset or,
+            dateString = deliveryTime.toISOString().substring(0,10);                             // Will return false if dateString is not in Holidays keyset or,
             if ((Object.keys(holidays)).includes(dateString)){                                   // if it is in Holiday keyset, return true if its list contains 'All'
-                return !holidays[dateString].some(obj => ['All', Inventory.Name].includes(obj)); // or Inventory.Name, else return false
+                return holidays[dateString].some(obj => ['All', Inventory.Name].includes(obj)); // or Inventory.Name, else return false
             } else{
-                return true;
+                return false;
             }
         }
         // Function to put Standard/OutOfRoute product in Basket
