@@ -6,32 +6,33 @@ function runAction(payload) {
     let minProducts = new Array();
     let maxProducts = new Array();
     if (Type != 'Return Order' &&
-        // RecordType Developer Names cannot be accessed via payload so have to hardcode Ids for each environment
+        // RecordType Developer Names cannot be accessed via payload so have hard-coded Ids for each environment
+        // Checks for if the RecordType Id is equal to Medical Professionals or Pharmacies
         (
-            Account.RecordTypeId === '0122z000002QGJtAAO' ||  // Production
-            Account.RecordTypeId === '0122z000002QGJtAAO' ||   // SIT
-            Account.RecordTypeId === '0122z000002QGJtAAO' ||   // UAT
-            Account.RecordTypeId === '0122z000002QGJtAAO'      // QA
+            Account.RecordTypeId === 'TBD' ||  // Production
+            Account.RecordTypeId === 'TBD' ||   // SIT
+            Account.RecordTypeId === 'TBD' ||   // UAT
+            (Account.RecordTypeId === '0122z000002QGJtAAO' || Account.RecordTypeId === '0122z000002QGJyAAO')      // QA
         ))
         {
             OrderItem.forEach(obj => {
-                productIds.add(obj.Product2Id);
+                productIds.add(obj.Product2Id);             // Get Product2Id for each OrderItem
             });
             Product2.forEach(prod => {
                 if (productIds.has(prod.Id)){
-                    productIdToProduct.set(prod.Id, prod);
+                    productIdToProduct.set(prod.Id, prod);  // Build the Map of Product.Id to Product
                 }
             });
             if (productIdToProduct.size){
-                OrderItem.forEach(getInvalidQuantities);
+                OrderItem.forEach(getInvalidQuantities);    // Loop through OrderItems after constructing Map
             }
             if(minProducts.length || maxProducts.length) {
                 data.error = '';
-                buildError(minProducts, maxProducts);
+                buildError(minProducts, maxProducts);       // If there are invalid quantities, run start creating the error message
                 data.blockExecution = true;
             } else {
             data.message = `Order validated ✓`;
-            data.updateDeviceData = true;
+            data.updateDeviceData = true;                    // If no error, return 
             data.reprice = true;
             data.blockExecution = false;
         }
@@ -43,6 +44,8 @@ function runAction(payload) {
         } else {
             data.error += `\n\n${errorMessage}`;
         }
+    } else {
+        data.message = `Order validated ✓`;
     }
     function getInvalidQuantities(item){
         if (!new Set(['Tax', 'Promotion', 'Discount']).has(item.aforza__Type__c)){
