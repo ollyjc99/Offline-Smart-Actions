@@ -1,17 +1,19 @@
+// @author: Oliver Carter
 function runAction(payload) {
     const {data :{record: {Type}, related: {Product2, OrderItem, Account: [Account]}, record}, data} = payload;
-    // @author: Oliver Carter
-    // RecordType.name == 'Medical Professionals'
-    if (Type != 'Return Order'){
-        let productIdToProduct = new Map();
-        let minProducts = new Array();
-        let maxProducts = new Array();
-
+    let productIdToProduct = new Map();
+    let minProducts = new Array();
+    let maxProducts = new Array();
+    if (Type != 'Return Order' && 
+        // RecordType Developer Names cannot be accessed via payload so have to hardcode Ids for each environment
+        (record.RecordType === '0122z000002QGJtAAO' ||  // Production
+        record.RecordType === '0122z000002QGJtAAO' ||   // SIT
+        record.RecordType === '0122z000002QGJtAAO' ||   // UAT
+        record.RecordType === '0122z000002QGJtAAO'      // QA
+        )){
         Product2.forEach(prod => {
             productIdToProduct.set(prod.Id, prod);
         });
-        data.message =`${productIdToProduct.size}`;
-
         if (productIdToProduct.size){
             OrderItem.forEach(getInvalidQuantities);
         }
@@ -35,17 +37,20 @@ function runAction(payload) {
             data.error += `\n\n${errorMessage}`;
         }
     }
-    function getInvalidQuantities(obj){
-        let prod = productIdToProduct.get(obj.Product2Id);
-        if ((prod.DRWO_Minimum_Quantity__c != null || prod.DRWO_Minimum_Quantity__c != 0) && prod.DRWO_Minimum_Quantity__c > obj.Quantity){
-            minProducts.push({'Id': prod.Id, 'Name': prod.Name, 'Quantity': obj.Quantity});
+    function getInvalidQuantities(item){
+        let prod = productIdToProduct.get(item.Product2Id);
+        let obj = {'Id': prod.Id, 'Name': prod.Name, 'Difference': null, 'Quantity': item.Quantity};
+        if ((prod.DRWO_Minimum_Quantity__c != null || prod.DRWO_Minimum_Quantity__c != 0) && prod.DRWO_Minimum_Quantity__c > item.Quantity){
+            obj.Difference = item.Quantity - prod.DRWO_Minimum_Quantity__c;
+            minProducts.push(obj);
         }
-        if ((prod.DRWO_Maximum_Quantity__c != null || prod.DRWO_Maximum_Quantity__c != 0) && prod.DRWO_Maximum_Quantity__c < obj.Quantity){
-            maxProducts.push({'Id': prod.Id, 'Name': prod.Name, 'Quantity': obj.Quantity});
+        if ((prod.DRWO_Maximum_Quantity__c != null || prod.DRWO_Maximum_Quantity__c != 0) && prod.DRWO_Maximum_Quantity__c < item.Quantity){
+            obj.Difference = item.Quantity - prod.DRWO_Maximum_Quantity__c;
+            maxProducts.push(obj);
         }
     }
     function listItems(item){
-        data.error += `\n✗ ${item.Name}: ${item.Quantity}`;
+        data.error += `\n✗ ${item.Name} ${item.Difference}`;
     }
     function buildError(minProducts, maxProducts){
         if (minProducts.length){
