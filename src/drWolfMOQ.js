@@ -37,16 +37,6 @@ function runAction(payload) {
             data.blockExecution = false;
         }
     }
-    if ((Account.aforza__Minimum_Order_Amount__c != null || Account.aforza__Minimum_Order_Amount__c != 0) && record.TotalAmount != 0 && Account.aforza__Minimum_Order_Amount__c > record.TotalAmount){
-        errorMessage = `Order Total less than Account Minimum Order Amount by €${Math.round((Account.aforza__Minimum_Order_Amount__c - record.TotalAmount) * 100) / 100}`;
-        if (data.error == null){
-            data.error = errorMessage;
-        } else {
-            data.error += `\n\n${errorMessage}`;
-        }
-    } else {
-        data.message = `Order validated ✓`;
-    }
     function getInvalidQuantities(item){
         if (!new Set(['Tax', 'Promotion', 'Discount']).has(item.aforza__Type__c)){
             let prod = productIdToProduct.get(item.Product2Id);
