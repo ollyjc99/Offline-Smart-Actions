@@ -37,16 +37,17 @@ function runAction(payload) {
             data.blockExecution = false;
         }
     }
+    // Function to populate the lists of products that exceed the minimum and maximimum order quantities. 
     function getInvalidQuantities(item){
         if (!new Set(['Tax', 'Promotion', 'Discount']).has(item.aforza__Type__c)){
             let prod = productIdToProduct.get(item.Product2Id);
-            let obj = {'Id': prod.Id, 'Name': prod.Name, 'Difference': null, 'Quantity': item.Quantity};
+            let obj = {'Id': prod.Id, 'Name': prod.Name, 'Difference': null};
             if ((prod.DRWO_Minimum_Quantity__c != null || prod.DRWO_Minimum_Quantity__c != 0) && prod.DRWO_Minimum_Quantity__c > item.Quantity){
                 obj.Difference = item.Quantity - prod.DRWO_Minimum_Quantity__c;
                 minProducts.push(obj);
             }
             if ((prod.DRWO_Maximum_Quantity__c != null || prod.DRWO_Maximum_Quantity__c != 0) && prod.DRWO_Maximum_Quantity__c < item.Quantity){
-                obj.Difference = item.Quantity - prod.DRWO_Maximum_Quantity__c;
+                obj.Difference = `+${item.Quantity - prod.DRWO_Maximum_Quantity__c}`;
                 maxProducts.push(obj);
             }
         }
