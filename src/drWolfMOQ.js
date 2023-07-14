@@ -5,7 +5,7 @@ function runAction(payload) {
     let productIdToProduct = new Map();
     let minProducts = new Array();
     let maxProducts = new Array();
-    if (Type != 'Return Order' &&
+    if (Type == 'Product Order' &&
         // RecordType Developer Names cannot be accessed via payload so have hard-coded Ids for each environment
         // Checks for if the RecordType Id is equal to Medical Professionals or Pharmacies
         (
@@ -31,7 +31,7 @@ function runAction(payload) {
                 buildError(minProducts, maxProducts);       // If there are invalid quantities, run start creating the error message
                 data.blockExecution = true;
             } else {
-            data.message = `Order validated ✓`;
+            data.message = `Order validated âœ“`;
             data.updateDeviceData = true;                    // If no error, return 
             data.reprice = true;
             data.blockExecution = false;
@@ -53,11 +53,11 @@ function runAction(payload) {
         }
     }
     function listItems(item){
-        data.error += `\n✗ ${item.Name} ${item.Difference}`;
+        data.error += `\nâœ— ${item.Name} ${item.Difference}`;
     }
     function buildError(minProducts, maxProducts){
         if (minProducts.length){
-            data.error += 'Products under Minimum Order Quantity:';
+            data.error += 'Die folgenden Produkte liegen unter der Mindestmenge:';
             minProducts.forEach(listItems);
         }
         if (maxProducts.length){
@@ -65,7 +65,7 @@ function runAction(payload) {
             if (data.error.length > 0){
                 spacer = '\n\n';
             }
-            data.error += `${spacer}Products over Maximum Order Quantity:`;
+            data.error += `${spacer}Die folgenden Produkte Ã¼berschreiten die HÃ¶chstmenge:`;
             maxProducts.forEach(listItems);
         }
     }
