@@ -1,0 +1,1 @@
+function runAction(c){const{data:{related:{Account:[{RecordTypeId:o}]}},data:e}=c;return o==="0125I000000HZk6QAG"||o==="0125I000000HZk6QAG"||o==="TBD"||o==="TBD"?(e.error="N\xE3o \xE9 poss\xEDvel criar Pedido para Conta com Tipo: Pessoa Jur\xEDdica \u274C",e.blockExecution=!0):(e.message="Tipo de conta v\xE1lido \u2714\uFE0F",e.blockExecution=!1),c}
