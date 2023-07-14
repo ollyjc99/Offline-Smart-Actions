@@ -11,8 +11,7 @@ function runAction(payload) {
         (
             Account.RecordTypeId === 'TBD' ||  // Production
             Account.RecordTypeId === 'TBD' ||   // SIT
-            Account.RecordTypeId === 'TBD' ||   // UAT
-            (Account.RecordTypeId === '0122z000002QGJtAAO' || Account.RecordTypeId === '0122z000002QGJyAAO')      // QA
+            (Account.RecordTypeId === '0123L000000RQhRQAW' || Account.RecordTypeId === '0123L000000RQhQQAW')      // UAT Pharmacy & Med Prof
         ))
         {
             OrderItem.forEach(obj => {
@@ -42,18 +41,18 @@ function runAction(payload) {
         if (!new Set(['Tax', 'Promotion', 'Discount']).has(item.aforza__Type__c)){
             let prod = productIdToProduct.get(item.Product2Id);
             let obj = {'Id': prod.Id, 'Name': prod.Name, 'Difference': null};
-            if ((prod.DRWO_Minimum_Quantity__c != null || prod.DRWO_Minimum_Quantity__c != 0) && prod.DRWO_Minimum_Quantity__c > item.Quantity){
+            if ((prod.DRWO_Minimum_Quantity__c != null && prod.DRWO_Minimum_Quantity__c != 0) && prod.DRWO_Minimum_Quantity__c > item.Quantity){
                 obj.Difference = item.Quantity - prod.DRWO_Minimum_Quantity__c;
                 minProducts.push(obj);
             }
-            if ((prod.DRWO_Maximum_Quantity__c != null || prod.DRWO_Maximum_Quantity__c != 0) && prod.DRWO_Maximum_Quantity__c < item.Quantity){
+            if ((prod.DRWO_Maximum_Quantity__c != null && prod.DRWO_Maximum_Quantity__c != 0) && prod.DRWO_Maximum_Quantity__c < item.Quantity){
                 obj.Difference = `+${item.Quantity - prod.DRWO_Maximum_Quantity__c}`;
                 maxProducts.push(obj);
             }
         }
     }
     function listItems(item){
-        data.error += `\nâœ— ${item.Name} ${item.Difference}`;
+        data.error += `\u2717 ${item.Name} ${item.Difference}`;
     }
     function buildError(minProducts, maxProducts){
         if (minProducts.length){
@@ -65,7 +64,7 @@ function runAction(payload) {
             if (data.error.length > 0){
                 spacer = '\n\n';
             }
-            data.error += `${spacer}Die folgenden Produkte Ã¼berschreiten die HÃ¶chstmenge:`;
+            data.error += `${spacer}Die folgenden Produkte überschreiten die Höchstmenge:`;
             maxProducts.forEach(listItems);
         }
     }
