@@ -10,10 +10,11 @@ function runAction(payload) {
         RecordTypeId === 'TBD'     // Dev
         ){
             // Cannot create Order for Account with Record Type: Legal Entity'
-            data.error = 'Não é possível criar Pedido para Conta com Tipo de Registro: Pessoa Jurídica';
+            data.error = 'Não é possível criar Pedido para Conta com Tipo: Pessoa Jurídica ❌';
             data.blockExecution = true;
         } else {
-            data.message = `Order RecordType Validated`;
+            // Account Record Type Valid
+            data.message = `Tipo de conta válido ✔️`;
             data.blockExecution = false;
         }
     return payload;
