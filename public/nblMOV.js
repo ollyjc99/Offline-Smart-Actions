@@ -1,0 +1,1 @@
+function runAction(t){const{data:{record:r},data:e}=t;return r.Type=="Product Order"&&r.TotalAmount<2500?e.error=`Order Amount Under $2500 threshold by {u0024}${Math.round((2500-r.TotalAmount)*100)/100}`:e.message="Order Amount validated {u2713}",t}
