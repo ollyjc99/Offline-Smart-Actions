@@ -30,7 +30,7 @@ function runAction(payload) {
                 buildError(minProducts, maxProducts);       // If there are invalid quantities, run start creating the error message
                 data.blockExecution = true;
             } else {
-            data.message = `Order validated \{u2713}`;
+            data.message = `Bestellung best\{u00E4}tigt \{u2713}`;
             data.updateDeviceData = true;                    // If no error, return 
             data.reprice = true;
             data.blockExecution = false;
