@@ -60,7 +60,10 @@ function runAction(payload) {
             } 
                                                                             // if it is on a public holiday or non delivery day
         }
-        if(record.Type != 'YDEV' && record.Type != 'YBLC'){ 
+        if(
+            record.Type != 'YDEV' && record.Type != 'YBLC' &&
+            (record.Type != 'YESL' && !["PT16", "PT17", "PT25"].includes(Account.Typology__c))
+        ){ 
             var standardDelivery = accountDeliveryDays.includes(dayName) || ["PT16", "PT17", "PT25"].includes(Account.Typology__c);
             if(standardDelivery) {
                 record.Shipping_Conditions__c = 'ZA';
