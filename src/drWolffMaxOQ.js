@@ -31,7 +31,6 @@ function runAction(payload) {
     if (orderChanged) {
         data.updateDeviceData = {
             OrderItem: true,
-            aforza__Outlet_Asset__c: true
         }
         data.reprice = true;
 
