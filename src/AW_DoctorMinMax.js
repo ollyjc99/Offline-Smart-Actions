@@ -3,7 +3,7 @@ function runAction(payload) {
     const { data: {record, related: {Account: [account], Product2, OrderItem, aforza__Outlet_Asset__c}}, data} = payload;
 
     // Check for triggering smart action conditions before continuing
-    if (record.Type !== "Muster" || account.RecordTypeId !== '0123L000000RQhQQAW' || !new Set(['DE', 'AT', 'CH']).has(account.AW_Country__c)) {
+    if (record.Type !== "Muster" && account.RecordTypeId !== '0123L000000RQhQQAW' && !new Set(['DE', 'AT', 'CH']).has(account.AW_Country__c)) {
         return payload;
     }
     let orderChanged = false;
@@ -64,6 +64,8 @@ function runAction(payload) {
         const oldQuantity = item.Quantity;
 
         item.Quantity = availableQuantity <= 0 ? 0 : availableQuantity;
+
+        asset.AW_Yearly_Quantity__c += item.Quantity;
 
         adjustedItems.push({"Name": product.Name, "Difference": item.Quantity - oldQuantity});
 
