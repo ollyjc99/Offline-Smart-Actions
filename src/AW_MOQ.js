@@ -16,7 +16,7 @@ function runAction(payload) {
     });
 
     Product2.forEach(prod => {
-        if (productIds.has(prod.Id)){
+        if (productIds.has(prod.Id) && !new Set(['Tax', 'Promotion', 'Discount']).has(obj.Name)){
             productIdToProduct.set(prod.Id, prod);  // Build the Map of Product.Id to Product
         }
     });
@@ -38,9 +38,7 @@ function runAction(payload) {
     
     // Function to populate the lists of products that exceed the minimum and maximimum order quantities. 
     function getInvalidQuantities(item){
-        if (new Set(['Tax', 'Promotion', 'Discount']).has(item.aforza__Type__c)){
-            return;
-        }
+
         let prod = productIdToProduct.get(item.Product2Id);
         let obj = {'Id': prod.Id, 'Name': prod.Name, 'Difference': null};
 
