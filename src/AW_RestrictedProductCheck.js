@@ -26,7 +26,7 @@ function runAction(payload) {
         }
     }
     else {
-        data.message = 'Products Validated';
+        data.message = `Products Validated \{u2713}`;
     }
     return payload;
 }
