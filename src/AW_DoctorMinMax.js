@@ -3,7 +3,7 @@ function runAction(payload) {
     const { data: {record, related: {Account: [account], Product2, OrderItem, aforza__Outlet_Asset__c}}, data} = payload;
 
     // Check for triggering smart action conditions before continuing
-    if (record.Type !== "Muster" || account.RecordTypeId !== '0123L000000RQhQQAW' || !new Set(['DE', 'AT']).has(account.AW_Country)) {
+    if (record.Type !== "Muster" || account.RecordTypeId !== '0123L000000RQhQQAW' || !new Set(['DE', 'AT', 'CH']).has(account.AW_Country__c)) {
         return payload;
     }
     let orderChanged = false;
@@ -53,7 +53,7 @@ function runAction(payload) {
         const product = productIdToProduct.get(item.Product2Id);
         const asset = productIdToAsset.get(item.Product2Id);
 
-        const yearlyLimit = product["AW_Doctor_"+account.AW_Country+"__c"];
+        const yearlyLimit = product["AW_Doctor_"+account.AW_Country__c+"__c"];
         const availableQuantity = yearlyLimit - asset.AW_Yearly_Quantity__c;
         
         // If there is enough available quantity skip this item
