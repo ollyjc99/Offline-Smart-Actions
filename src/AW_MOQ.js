@@ -21,9 +21,11 @@ function runAction(payload) {
         }
     });
 
-    if (productIdToProduct.size){
-        OrderItem.forEach(getInvalidQuantities);    // Loop through OrderItems after constructing Map
+    if (!productIdToProduct.size){
+        return;
     }
+
+    OrderItem.forEach(getInvalidQuantities);    // Loop through OrderItems after constructing Map
 
     if (minProducts.length || maxProducts.length) {
         data.error = '';
