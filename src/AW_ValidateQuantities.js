@@ -34,7 +34,7 @@ function runAction(payload) {
     function categorizeOrderItems(orderItems){
 
         const itemMap = new Map([
-                ["ResPharmaciestricted", []], 
+                ["Pharmacies", []], 
                 ["Individual", []]]);
 
         orderItems.forEach(oi => {
