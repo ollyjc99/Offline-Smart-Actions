@@ -3,7 +3,7 @@ function runAction(payload) {
     const { data: {record, related: {Account: [account], Product2, OrderItem, aforza__Outlet_Asset__c}}, data} = payload;
 
     const pharmacyTypeId = '0122z000002QGJyAAO';
-    const medProfTypeId = '0123L000000RQhQQAW'; // Does not exist anymore :raised eyebrow emoji:
+    const medProfTypeId = '0123L000000RQhQQAW';
     const salespersonTypeId = '0122z000002dp2PAAQ';
 
     if (!new Set(['Product Order', 'Sample Order']).has(record.Type) && !new Set([pharmacyTypeId, medProfTypeId, salespersonTypeId]).has(account.RecordTypeId) && !new Set(['DE', 'AT', 'CH']).has(account.AW_Country__c)) {
