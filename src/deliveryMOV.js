@@ -4,7 +4,6 @@ function runAction(payload) {
         const holidays = {'2023-04-07': ['All'], '2023-12-25': ['All'], '2023-12-08': ['All'], '2023-12-01': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-08-15': ['All'], '2023-06-10': ['All'], '2023-06-08': ['All'], '2023-04-25': ['All', 'Warehouse - Alcains'], '2023-05-01': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-05-22': ['Warehouse - Leiria'], '2023-06-13': ['Warehouse - Camarate'], '2023-05-23': ['Warehouse - Portalegre'], '2023-06-24': ['Warehouse - Porto'], '2023-06-29': ['Warehouse - Setúbal', 'Warehouse - Évora', 'Warehouse - Bombarral'], '2023-09-03': ['Warehouse - Algoz'], '2023-05-18': ['Warehouse - Beja'], '2023-07-04': ['Warehouse - Coimbra'], '2023-09-07': ['Warehouse - Faro']};
         let orderTotal = 0;
         let response = {orderChanged : false, reprice : false};
-        let message;
 
         // Get the customer segment and default to 06 (Occasional) if not found
         let segment = Account.Customer_Segment__c;
@@ -30,38 +29,45 @@ function runAction(payload) {
         let deliveryDate = record.EndDate;
         let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         let accountDeliveryDays = Account.Delivery_Day__c.split(';');
-
-        if(!deliveryDate) {                                                // If no Delivery Date has been selected, calculate one
-            dt = incrementDeliveryDate(new Date());                        // avoiding holidays and including account delivery days
+        /* If no Delivery Date has been selected, calculate one
+        avoiding holidays and including account delivery days */
+        if(!deliveryDate) {
+            dt = incrementDeliveryDate(new Date());
             dayName = days[dt.getDay()];
             isHoliday = checkHolidays(dt) || !accountDeliveryDays.includes(dayName);
+
+            // If new delivery date is a holiday and a delivery day then select next day
             if (isHoliday && accountDeliveryDays.includes(dayName)){
                 dt = incrementDeliveryDate(dt);
-                dayName = days[dt.getDay()];                    // If new delivery date is a holiday and a delivery day then select next day
+                dayName = days[dt.getDay()];
                 isHoliday = false;
             }
             while (isHoliday){
                 dt = incrementDeliveryDate(dt);
                 dayName = days[dt.getDay()];
                 isHoliday = checkHolidays(dt) || !accountDeliveryDays.includes(dayName);
+
+                // If new delivery date is a holiday and a delivery day then select next day
                 if (isHoliday && accountDeliveryDays.includes(dayName)){
                     dt = incrementDeliveryDate(dt);
-                    dayName = days[dt.getDay()];                // If new delivery date is a holiday and a delivery day then select next day
+                    dayName = days[dt.getDay()];                
                     isHoliday = false;
                 }
             }
-            record.EndDate = dt.toISOString().substring(0,10);              // Set record delivery date
+            // Set record delivery date
+            record.EndDate = dt.toISOString().substring(0,10);              
             response.orderChanged = true;
         } else {
             dt = new Date(deliveryDate);
             dayName = days[dt.getDay()];
+            /* If a Delivery Date has been selected by a rep, flag it
+                if it is on a public holiday or non delivery day */
             if (checkHolidays(dt)|| ['Saturday', 'Sunday'].includes(dayName)){
-                manualError = true;                                         // If a Delivery Date has been selected by a rep, flag it
-            } 
-                                                                            // if it is on a public holiday or non delivery day
+                manualError = true;                                         
+            }                                                              
         }
         if(
-            record.Type != 'YDEV' && record.Type != 'YBLC' &&
+            !new Set(['YDEV', 'YBLC', 'YDL1']).has(record.Type) &&
             (record.Type != 'YESL' && !["PT16", "PT17", "PT25"].includes(Account.Typology__c))
         ){ 
             var standardDelivery = accountDeliveryDays.includes(dayName) || ["PT16", "PT17", "PT25"].includes(Account.Typology__c);
@@ -69,14 +75,14 @@ function runAction(payload) {
                 record.Shipping_Conditions__c = 'ZA';
                 removeProduct(outOfRoutePbe);
                 // Order value exceeds threshold
-                if(orderTotal >= standardThreshold) {
+                if(orderTotal >= standardThreshold) {w
                     // Basket Exceeds Standard Delivery Threshold, no charge
-                    message = 'A cesta excede o limite de entrega padrão, sem custo';
+                    data.message = 'A cesta excede o limite de entrega padrão, sem custo';
                     removeProduct(standardPbe);
                 }
                 else {
                     // Basket does not meet Standard Delivery Threshold, delivery product added
-                    message = 'A cesta não atende ao limite de entrega padrão, produto de entrega adicionado';
+                    data.message = 'A cesta não atende ao limite de entrega padrão, produto de entrega adicionado';
                     putProduct(standardPbe);
                 }
             }
@@ -86,17 +92,21 @@ function runAction(payload) {
                 // Order value exceeds threshold
                 if(orderTotal >= outOfRouteThreshold) {
                     // Basket Exceeds Out Of Route Threshold, no charge
-                    message = 'A cesta excede o limite fora da rota, sem custo';
+                    data.message = 'A cesta excede o limite fora da rota, sem custo';
                     removeProduct(outOfRoutePbe);
                 }
                 else {
                     // Basket does not meet Out Of Route Threshold, delivery product added
-                    message = 'A cesta não atende ao limite fora da rota, produto de entrega adicionado';
+                    data.message = 'A cesta não atende ao limite fora da rota, produto de entrega adicionado';
                     putProduct(outOfRoutePbe);
                 }
             }
         } else {
-            data.message = '';
+            // Remove delivery product if its been added manually
+            removeProduct(standardPbe);
+            removeProduct(outOfRoutePbe);
+
+            data.message = 'HELLO';
         }
         if(response.orderChanged) {
             data.updateDeviceData = {
@@ -105,16 +115,12 @@ function runAction(payload) {
             }
             data.reprice = true;
         }
-        // else {
-        //     data.updateDeviceData = false;
-        //     data.reprice = false;
-        // }
         if (manualError){
             // Warning, selected delivery date is a holiday or weekend
-            data.message = message + `\n\nAviso, a data selecionada para entrega é um feriado ou um fim de semana \u{2757}`;
+            data.message += `\n\nAviso, a data selecionada para entrega é um feriado ou um fim de semana \u{2757}`;
         } else {
             // New delivery date
-            data.message = message + `\n\nNova data de entrega: ${record.EndDate}`;
+            data.message += `\n\nNova data de entrega: ${record.EndDate}`;
         }
         // Function to get the Standard and OutOfRoute delivery products
         function getStandardAndExtraProducts(product){
