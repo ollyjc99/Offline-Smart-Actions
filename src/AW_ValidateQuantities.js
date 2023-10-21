@@ -10,7 +10,6 @@ function runAction(payload) {
         return payload;
     }
 
-    let orderChanged = false;
     const adjustedProducts = [];
 
     const productIds = new Set(OrderItem.map(obj => obj.Product2Id));
@@ -37,7 +36,7 @@ function runAction(payload) {
     }
 
     if (adjustedProducts.length){
-        data.message = 'Some Products Have Been Adjusted To Comply With Limits:\n';
+        data.message = 'Some Quantities Have Been Adjusted To Comply With Limits:\n';
         adjustedProducts.forEach(obj => {
             data.message += `\n * ${obj.Name}: ${obj.Difference}`;
         });
