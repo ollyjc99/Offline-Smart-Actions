@@ -7,7 +7,7 @@ function runAction(payload) {
     const mixedProductMap = new Map([["Restricted", []], ["Unrestricted", []]]);
 
     Product2.forEach(obj => {
-        if (productIds.has(obj.Id)){
+        if (productIds.has(obj.Id) && !new Set(['Tax', 'Promotion', 'Discount']).has(obj.Name)){
             mixedProductMap.get(obj.AW_Is_Restricted_Drug__c ? "Restricted" : "Unrestricted").push(obj);
         }
     });
