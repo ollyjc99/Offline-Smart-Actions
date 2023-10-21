@@ -24,8 +24,6 @@ function runAction(payload) {
 
     const orderItemsToProcess = OrderItem.filter((obj) => productMap.has(obj.Product2Id));
 
-    data.message = '';
-
     const categorizedOrderItems = categorizeOrderItems(orderItemsToProcess);
 
     if (categorizedOrderItems.get('Product').length){
@@ -34,6 +32,16 @@ function runAction(payload) {
 
     if (categorizedOrderItems.get('Outlet Asset').length){
         validateAgainstOutletAssetLimits(categorizedOrderItems.get('Outlet Asset'));
+    }
+
+    if (adjustedProducts.length){
+        data.message = 'Some Products Have Been Adjusted To Comply With Limits:\n';
+        adjustedProducts.forEach(obj => {
+            data.message += `\n * ${obj.Name}: ${obj.Difference}`;
+        });
+    }
+    else {
+        data.message = 'Quantities Valid';
     }
 
     function categorizeOrderItems(orderItems){
@@ -114,10 +122,15 @@ function runAction(payload) {
         let yearlyQuantity = oa.AW_Yearly_Quantity__c != null ? oa.AW_Yearly_Quantity__c : 0;
         let availableQuantity = limit - yearlyQuantity;
 
-        oi.Quantity = oi.Quantity + yearlyQuantity < limit ? oi.Quantity : availableQuantity > 0 ? availableQuantity : 0;
+        let q = oi.Quantity;
+
+        oi.Quantity = q + yearlyQuantity < limit ? q : availableQuantity > 0 ? availableQuantity : 0;
 
         oa.AW_Yearly_Quantity__c += oi.Quantity;
 
+        if (q != oi.Quantity){
+            getQuantityDifference(q, oi);
+        }
     }
     
     function adjustQuantityFromProduct(oi){
@@ -128,6 +141,16 @@ function runAction(payload) {
         let q = oi.Quantity;
 
         oi.Quantity = q < min ? min : q > max ? max : q;
+
+        if (q != oi.Quantity){
+            getQuantityDifference(q, oi);
+        }
+    }
+
+    function getQuantityDifference(q, oi){
+        let diff = oi.Quantity - q;
+
+        adjustedProducts.push({"Name": productMap.get(oi.Product2Id).Name, "Difference": diff < 0 ? diff : '+' + diff});
     }
 
     return payload;
