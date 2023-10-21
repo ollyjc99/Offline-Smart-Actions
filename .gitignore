@@ -2,3 +2,4 @@
 movDebug.js
 node_modules/
 *.json
+archive/
