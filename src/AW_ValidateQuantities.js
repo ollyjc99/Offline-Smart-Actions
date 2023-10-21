@@ -27,7 +27,9 @@ function runAction(payload) {
     const categorizedOrderItems = categorizeOrderItems(orderItemsToProcess);
 
     if (categorizedOrderItems.get('Product').length){
-        validateAgainstProductLimits(categorizedOrderItems.get('Product'));
+        categorizedOrderItems.get('Product').forEach(oi => {
+            adjustQuantityFromProduct(oi)
+        });
     }
 
     if (categorizedOrderItems.get('Outlet Asset').length){
@@ -61,13 +63,8 @@ function runAction(payload) {
                 itemMap.get('Outlet Asset').push(oi);
             }
         });
-        return itemMap;
-    }
 
-    function validateAgainstProductLimits(newOrderItems){
-        newOrderItems.forEach(oi => {
-            adjustQuantityFromProduct(oi)
-        });
+        return itemMap;
     }
 
     function validateAgainstOutletAssetLimits(newOrderItems){
@@ -77,7 +74,7 @@ function runAction(payload) {
         newOrderItems.forEach(oi => {
 
             let mappingCode = record.AccountId + '-' + oi.Product2Id;
-            
+
             if (!mappingCodeToOrderItems.has(mappingCode)){
                 mappingCodeToOrderItems.set(mappingCode, [oi]);
             }  
@@ -93,9 +90,8 @@ function runAction(payload) {
                 return;
             }
             const assetQuantitiesToAdjust = mappingCodeToOrderItems.get(mappingCode);
-
 			const limit = getQuantityLimit(oa, account.AW_Country__c);
-            
+
             assetQuantitiesToAdjust.forEach(oi => {
                 adjustQuantityFromOA(oa, oi, limit);
             });
@@ -110,7 +106,6 @@ function runAction(payload) {
         if (account.RecordTypeId == medProfTypeId){
             limit = product['AW_Doctor_Limit_' + accountCountry + '__c'];
         }
-
         else if (account.RecordTypeId == salespersonTypeId){
             limit = product.AW_FA_Yearly_Limit__c;
         }
