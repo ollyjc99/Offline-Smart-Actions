@@ -58,7 +58,7 @@ function runAction(payload) {
 
     function validateAgainstProductLimits(newOrderItems){
         newOrderItems.forEach(oi => {
-            adjustQuantity(oi)
+            adjustQuantityFromProduct(oi)
         });
     }
 
@@ -67,30 +67,29 @@ function runAction(payload) {
         const mappingCodeToOrderItems = new Map();
 
         newOrderItems.forEach(oi => {
-            
-            productIds.add(oi.Product2Id);
-            
-            let mappingCode = String.valueOf(record.AccountId) + '-' + String.valueOf(oi.Product2Id);
+
+            let mappingCode = record.AccountId + '-' + oi.Product2Id;
             
             if (!mappingCodeToOrderItems.has(mappingCode)){
-                mappingCodeToOrderItems.put(mappingCode, [oi]);
+                mappingCodeToOrderItems.set(mappingCode, [oi]);
             }  
             else {
-                mappingCodeToOrderItems.get(mappingCode).add(oi);
+                mappingCodeToOrderItems.get(mappingCode).push(oi);
             }
         });
-
         aforza__Outlet_Asset__c.forEach(oa => {
-            const mappingCode = String.valueOf(record.AccountId) + '-' + String.valueOf(oa.aforza__Product__c);
+
+            const mappingCode = record.AccountId + '-' + oa.aforza__Product__c;
             
             if (!mappingCodeToOrderItems.has(mappingCode)) {
                 return;
             }
- 
+            const assetQuantitiesToAdjust = mappingCodeToOrderItems.get(mappingCode);
+
 			const limit = getQuantityLimit(oa, account.AW_Country__c);
             
-            newOrderItems.forEach(oi => {
-                adjustQuantity(oa, oi, limit);
+            assetQuantitiesToAdjust.forEach(oi => {
+                adjustQuantityFromOA(oa, oi, limit);
             });
         });
     }
@@ -101,17 +100,16 @@ function runAction(payload) {
         let product = productMap.get(oa.aforza__Product__c);
         
         if (account.RecordTypeId == medProfTypeId){
-            limit = product.get('AW_Doctor_Limit_' + accountCountry + '__c');
+            limit = product['AW_Doctor_Limit_' + accountCountry + '__c'];
         }
-        
+
         else if (account.RecordTypeId == salespersonTypeId){
             limit = product.AW_FA_Yearly_Limit__c;
         }
-        
         return limit;
     }
 
-    function adjustQuantity(oa, oi, limit){
+    function adjustQuantityFromOA(oa, oi, limit){
         
         let yearlyQuantity = oa.AW_Yearly_Quantity__c != null ? oa.AW_Yearly_Quantity__c : 0;
         let availableQuantity = limit - yearlyQuantity;
@@ -122,18 +120,14 @@ function runAction(payload) {
 
     }
     
-    function adjustQuantity(oi){
+    function adjustQuantityFromProduct(oi){
 
         let min = productMap.get(oi.Product2Id).DRWO_Minimum_Quantity__c;
         let max = productMap.get(oi.Product2Id).DRWO_Maximum_Quantity__c;
         
         let q = oi.Quantity;
 
-        oi.Quantity = getMinMaxQuantity(q, min, max);
-    }
-
-    function getMinMaxQuantity(q, min, max){
-        return q < min ? min : q > max ? max : q;
+        oi.Quantity = q < min ? min : q > max ? max : q;
     }
 
     return payload;
