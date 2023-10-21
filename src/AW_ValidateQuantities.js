@@ -11,6 +11,7 @@ function runAction(payload) {
     }
 
     let orderChanged = false;
+    const adjustedProducts = [];
 
     const productIds = new Set(OrderItem.map(obj => obj.Product2Id));
     const productMap = new Map();
@@ -21,87 +22,118 @@ function runAction(payload) {
         }
     });
 
-    const categorizedOrderItems = categorizeOrderItems(OrderItem);
+    const orderItemsToProcess = OrderItem.filter((obj) => productMap.has(obj.Product2Id));
 
-    if (categorizedOrderItems.get('Pharmacies')){
-        validatePharmacyQuantities(categorizedOrderItems.get('Pharmacies'));
+    data.message = '';
+
+    const categorizedOrderItems = categorizeOrderItems(orderItemsToProcess);
+
+    if (categorizedOrderItems.get('Product').length){
+        validateAgainstProductLimits(categorizedOrderItems.get('Product'));
     }
 
-    if (categorizedOrderItems.get('Individual')){
-        handleIndividualQuantities(categorizedOrderItems.get('Individual'));
+    if (categorizedOrderItems.get('Outlet Asset').length){
+        validateAgainstOutletAssetLimits(categorizedOrderItems.get('Outlet Asset'));
     }
 
     function categorizeOrderItems(orderItems){
 
-        const itemMap = new Map([
-                ["Pharmacies", []], 
-                ["Individual", []]]);
+        let itemMap = new Map([
+                ["Product", []], 
+                ["Outlet Asset", []]]);
 
         orderItems.forEach(oi => {
 
             let product = productMap.get(oi.Product2Id);
 
-            if (record.Type == 'Product Order' && account.recordType == pharmacyTypeId && product.AW_Is_Restricted_Drug__c){
-                itemMap.get('Pharmacies').push(oi);
+            if (record.Type == 'Product Order' && account.RecordTypeId == pharmacyTypeId){
+                itemMap.get('Product').push(oi);
             }
-            if ((record.Type == 'Product Order' && account.recordType == salespersonTypeId) || (record.Type == 'Sample Order' && account.recordType == medProfTypeId)){
-                itemMap.get('Individual').push(oi);
+            if ((record.Type == 'Sample Order' && account.RecordTypeId == medProfTypeId && product.AW_Is_Restricted_Drug__c) || record.Type == 'Product Order' && account.RecordTypeId == salespersonTypeId){
+                itemMap.get('Outlet Asset').push(oi);
             }
         });
-
         return itemMap;
     }
-    function handleIndividualQuantities(orderItems){
 
-        const mappingCodeToOrderItems = new Map(orderItems.map(oi => [oi.accountId + '-' + oi.Product2Id, []]));
-
-        orderItems.forEach(oi => {
-            let mappingCode = oi.Order.accountId + '-' +  oi.Product2Id;
-
-            mappingCodeToOrderItems.get(mappingCode).add(oi);
-
+    function validateAgainstProductLimits(newOrderItems){
+        newOrderItems.forEach(oi => {
+            adjustQuantity(oi)
         });
-        aforza__Outlet_Asset__c.forEach(oa => {
-            let mappingCode = oa.aforza__Account__c + oa.aforza__Product__c;
+    }
 
+    function validateAgainstOutletAssetLimits(newOrderItems){
+
+        const mappingCodeToOrderItems = new Map();
+
+        newOrderItems.forEach(oi => {
+            
+            productIds.add(oi.Product2Id);
+            
+            let mappingCode = String.valueOf(record.AccountId) + '-' + String.valueOf(oi.Product2Id);
+            
+            if (!mappingCodeToOrderItems.has(mappingCode)){
+                mappingCodeToOrderItems.put(mappingCode, [oi]);
+            }  
+            else {
+                mappingCodeToOrderItems.get(mappingCode).add(oi);
+            }
+        });
+
+        aforza__Outlet_Asset__c.forEach(oa => {
+            const mappingCode = String.valueOf(record.AccountId) + '-' + String.valueOf(oa.aforza__Product__c);
+            
             if (!mappingCodeToOrderItems.has(mappingCode)) {
                 return;
             }
-
-            let quantityLimit;
-
-            if (record.Type == 'Sample Order'){
-                quantityLimit = productMap.get(oa.aforza__Product__c).get('AW_Doctor_Limit_' + record.AW_Country__c + '__c');
-            }
-            else {
-                quantityLimit = oa.AW_FA_Yearly_Limit__c;
-            }
-
-            mappingCodeToOrderItems.get(mappingCode).forEach(oi => {
-                
-                let yearlyQuantity = oa.AW_Yearly_Quantity__c != null ? oa.AW_Yearly_Quantity__c : 0;
-                let availableQuantity = quantityLimit - yearlyQuantity;
-                
-                
-                oi.Quantity = oi.Quantity + yearlyQuantity < quantityLimit ? oi.Quantity : availableQuantity > 0 ? availableQuantity : 0;
-                
-                oa.AW_Yearly_Quantity__c += oi.Quantity;
-            }
-            );
+ 
+			const limit = getQuantityLimit(oa, account.AW_Country__c);
+            
+            newOrderItems.forEach(oi => {
+                adjustQuantity(oa, oi, limit);
+            });
         });
     }
+
+    function getQuantityLimit(oa, accountCountry){
+        
+        let limit;
+        let product = productMap.get(oa.aforza__Product__c);
+        
+        if (account.RecordTypeId == medProfTypeId){
+            limit = product.get('AW_Doctor_Limit_' + accountCountry + '__c');
+        }
+        
+        else if (account.RecordTypeId == salespersonTypeId){
+            limit = product.AW_FA_Yearly_Limit__c;
+        }
+        
+        return limit;
+    }
+
+    function adjustQuantity(oa, oi, limit){
+        
+        let yearlyQuantity = oa.AW_Yearly_Quantity__c != null ? oa.AW_Yearly_Quantity__c : 0;
+        let availableQuantity = limit - yearlyQuantity;
+
+        oi.Quantity = oi.Quantity + yearlyQuantity < limit ? oi.Quantity : availableQuantity > 0 ? availableQuantity : 0;
+
+        oa.AW_Yearly_Quantity__c += oi.Quantity;
+
+    }
     
-    function validatePharmacyQuantities(oi){
+    function adjustQuantity(oi){
+
         let min = productMap.get(oi.Product2Id).DRWO_Minimum_Quantity__c;
         let max = productMap.get(oi.Product2Id).DRWO_Maximum_Quantity__c;
         
         let q = oi.Quantity;
-        
-        let adjustedQuantity;
-        
-        adjustedQuantity = q < min ? min : q > max ? max : q;
-        
-        oi.Quantity = adjustedQuantity;
+
+        oi.Quantity = getMinMaxQuantity(q, min, max);
+    }
+
+    function getMinMaxQuantity(q, min, max){
+        return q < min ? min : q > max ? max : q;
     }
 
     return payload;
