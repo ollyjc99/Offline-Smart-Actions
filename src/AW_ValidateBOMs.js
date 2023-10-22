@@ -4,48 +4,47 @@ function runAction(payload) {
     const bomMap = new Map();
     const productMap = new Map();
     const childIds = new Set();
-    const bomIds = new Set(OrderItem.map(obj => obj.Product2Id));
+    const bomIds = new Set();
 
-    Product2.forEach(obj => {
-        if (bomIds.has(obj.Id) && !new Set(['Tax', 'Promotion', 'Discount']).has(obj.Name) && obj.aforza__Type__c == 'BOM'){
-          bomMap.set(obj.Id, []);
-          productMap.set(obj.Id, obj);
-        }
-    });
-;
+    const bomOrderItems = OrderItem.filter(obj => obj.aforza__Type__c == 'BOM');
+    const itemIds = new Set(bomOrderItems.map(obj => obj.Product2Id));
 
-    if (!bomMap.size){
-        return;
-    }
+    // Product2.forEach(obj => {
+    //     if (itemIds.has(obj.Id) && !new Set(['Tax', 'Promotion', 'Discount']).has(obj.Name) && obj.aforza__Type__c == 'BOM'){
+    //       // bomMap.set(obj.Id, []);
+    //       bomIds.add(obj.Id);
+    //       productMap.set(obj.Id, obj);
+    //     }
+    // });
 
-    aforza__Relationship_Rule__c.filter(obj => bomMap.has(obj.aforza__Target_Product__c));
+    aforza__Relationship_Rule__c.filter(obj => itemIds.has(obj.aforza__Target_Product__c));
 
     aforza__Relationship_Rule__c.forEach(obj => {
         childIds.add(obj.aforza__Source_Product__c);
-        bomMap.get(obj.aforza__Target_Product__c).push(obj.aforza__Source_Product__c);
     });
 
     Product2.forEach(obj => {
-        if (childIds.has(obj.Id)){
-            productMap.set(obj.Id, obj);
+      if (childIds.has(obj.Id) || itemIds.has(obj.Id)){
+          productMap.set(obj.Id, obj);
+      }
+    });
+
+    aforza__Relationship_Rule__c.forEach(obj => {
+
+        let product = productMap.get(obj.aforza__Source_Product__c);
+        let bom = productMap.get(obj.aforza__Target_Product__c);
+
+        if (!bomMap.has(product.Name)){
+          bomMap.set(product.Name, [bom.Name]);
+        }
+        else {
+          bomMap.get(product.Name).push(bom.Name);
         }
     });
 
-    const productToBOMs = new Map();
-
-    for (const [bom, productsIds] of bomMap) {
-      for (const id of productsIds) {
-        data.message += `Id: ${id} `;
-        if (!productToBOMs.has(id)) {
-            productToBOMs.set(id, []);
-        }
-        productToBOMs.get(id).push(productMap.get(bom).Name);
-      }
-    }
-
     const duplicateProducts = new Map();
 
-    for (const [product, boms] of productToBOMs) {
+    for (const [product, boms] of bomMap) {
       if (boms.length) {
         duplicateProducts.set(product, boms);
       }
@@ -54,10 +53,9 @@ function runAction(payload) {
     if (duplicateProducts){
       data.error = 'There are duplicate products in BOMs:\n';
 
-      duplicateProducts.forEach((value, key) => {
-        let product = productMap.get(key);
+      duplicateProducts.forEach((boms, product) => {
 
-        data.error += ` - ${product.Name}: ${value}\n          `;
+        data.error += ` - ${product}: ${boms}\n          `;
       });
     }
     else {
