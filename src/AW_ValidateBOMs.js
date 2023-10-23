@@ -5,10 +5,10 @@ function runAction(payload) {
     const productMap = new Map();
     const productIds = new Set();
 
-    const bomOrderItems = OrderItem.filter(obj => obj.aforza__Type__c == 'BOM');
+    const bomOrderItems = OrderItem.filter(obj => obj.aforza__Type__c == 'Vertriebsst\u00FCckliste');
 
-    if (!bomOrderItems){
-      data.message = `Bestellung best\{u00E4}tigt \{u2713}`;
+    if (!bomOrderItems.length){
+      data.message = `Bestellung best\u00E4tigt \u2713`;
       return payload;
     }
 
@@ -59,7 +59,7 @@ function runAction(payload) {
     }
     
     else {
-      data.message = `BOMs best\{u00E4}tigt \{u2713}`;
+      data.message = `BOMs best\u00E4tigt \u2713`;
     }
 
     return payload;
