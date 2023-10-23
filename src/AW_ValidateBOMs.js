@@ -6,6 +6,11 @@ function runAction(payload) {
     const productIds = new Set();
 
     const bomOrderItems = OrderItem.filter(obj => obj.aforza__Type__c == 'BOM');
+
+    if (!bomOrderItems){
+      return payload;
+    }
+
     const itemIds = new Set(bomOrderItems.map(obj => obj.Product2Id));
 
     aforza__Relationship_Rule__c.filter(obj => itemIds.has(obj.aforza__Target_Product__c));
