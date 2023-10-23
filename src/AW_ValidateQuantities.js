@@ -39,7 +39,7 @@ function runAction(payload) {
         // Some quantities have been adjusted to comply with the limits
         data.message = 'Einige Mengen wurden angepasst, um die Grenzwerte einzuhalten:\n';
         adjustedQuantities.forEach(obj => {
-            data.message += `\n \{u2022} ${obj.Name}: ${obj.Difference}`;
+            data.message += `\n \u2022 ${obj.Name}: ${obj.Difference}`;
         });
     }
     else {
