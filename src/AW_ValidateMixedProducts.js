@@ -26,7 +26,7 @@ function runAction(payload) {
         }
     }
     else {
-        data.message = `Products Validated \{u2713}`;
+        data.message = `Bestellung best\{u00E4}tigt \{u2713}`;
     }
     return payload;
 }

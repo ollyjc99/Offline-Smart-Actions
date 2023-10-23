@@ -8,6 +8,7 @@ function runAction(payload) {
     const bomOrderItems = OrderItem.filter(obj => obj.aforza__Type__c == 'BOM');
 
     if (!bomOrderItems){
+      data.message = 'Bestellung best\{u00E4}tigt \{u2713}';
       return payload;
     }
 
@@ -56,7 +57,7 @@ function runAction(payload) {
     }
     
     else {
-      data.message = 'BOMs Valid';
+      data.message = 'BOMs best\{u00E4}tigt \{u2713}';
     }
 
     return payload;

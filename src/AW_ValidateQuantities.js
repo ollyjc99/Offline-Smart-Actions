@@ -36,13 +36,15 @@ function runAction(payload) {
     }
 
     if (adjustedQuantities.length){
-        data.message = 'Some Quantities Have Been Adjusted To Comply With Limits:\n';
+        // Some quantities have been adjusted to comply with the limits
+        data.message = 'Einige Mengen wurden angepasst, um die Grenzwerte einzuhalten:\n';
         adjustedQuantities.forEach(obj => {
-            data.message += `\n * ${obj.Name}: ${obj.Difference}`;
+            data.message += `\n \{u2022} ${obj.Name}: ${obj.Difference}`;
         });
     }
     else {
-        data.message = 'Quantities Valid';
+        // Order validated
+        data.message = 'Mengen best\{u00E4}tigt \{u2713}';
     }
 
     function categorizeOrderItems(orderItems){
