@@ -10,7 +10,7 @@ function runAction(payload) {
         return payload;
     }
 
-    const adjustedProducts = [];
+    const adjustedQuantities = [];
 
     const productIds = new Set(OrderItem.map(obj => obj.Product2Id));
     const productMap = new Map();
@@ -35,9 +35,9 @@ function runAction(payload) {
         validateAgainstOutletAssetLimits(categorizedOrderItems.get('Outlet Asset'));
     }
 
-    if (adjustedProducts.length){
+    if (adjustedQuantities.length){
         data.message = 'Some Quantities Have Been Adjusted To Comply With Limits:\n';
-        adjustedProducts.forEach(obj => {
+        adjustedQuantities.forEach(obj => {
             data.message += `\n * ${obj.Name}: ${obj.Difference}`;
         });
     }
@@ -83,7 +83,7 @@ function runAction(payload) {
         });
         aforza__Outlet_Asset__c.forEach(oa => {
 
-            const mappingCode = record.AccountId + '-' + oa.aforza__Product__c;
+            const mappingCode = oa.aforza__Account__c + '-' + oa.aforza__Product__c;
             
             if (!mappingCodeToOrderItems.has(mappingCode)) {
                 return;
@@ -144,7 +144,7 @@ function runAction(payload) {
     function getQuantityDifference(q, oi){
         let diff = oi.Quantity - q;
 
-        adjustedProducts.push({"Name": productMap.get(oi.Product2Id).Name, "Difference": diff < 0 ? diff : '+' + diff});
+        adjustedQuantities.push({"Name": productMap.get(oi.Product2Id).Name, "Difference": diff < 0 ? diff : '+' + diff});
     }
 
     return payload;
