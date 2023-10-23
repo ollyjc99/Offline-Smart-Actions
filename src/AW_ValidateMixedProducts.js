@@ -14,13 +14,13 @@ function runAction(payload) {
 
     if (mixedProductMap.get('Restricted').length > 0 && mixedProductMap.get('Unrestricted').length > 0){
 
-        data.error = 'You have mixed Restricted and Unrestricted Products:\n';
+        data.error = 'You have mixed Restricted and Unrestricted Products \u274C\n';
         data.blockExecution = true;
 
         for (const key of mixedProductMap.keys()){
             data.error += `\n${key} products:\n`;
             mixedProductMap.get(key).forEach(obj => {
-                data.error += `\n${obj.Name}`;
+                data.error += `\n \u2022 ${obj.Name}`;
             });
             data.error += '\n';
         }
