@@ -44,7 +44,7 @@ function runAction(payload) {
     }
     else {
         // Order validated
-        data.message = 'Mengen best\{u00E4}tigt \{u2713}';
+        data.message = `Mengen best\{u00E4}tigt \{u2713}`;
     }
 
     function categorizeOrderItems(orderItems){
