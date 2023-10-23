@@ -12,16 +12,18 @@ function runAction(payload) {
       return payload;
     }
 
-    const itemIds = new Set(bomOrderItems.map(obj => obj.Product2Id));
+    const bomIds = new Set(bomOrderItems.map(obj => obj.Product2Id));
 
-    aforza__Relationship_Rule__c.filter(obj => itemIds.has(obj.aforza__Target_Product__c));
+    aforza__Relationship_Rule__c.filter(obj => obj.aforza__Target_Product__c != null && obj.aforza__Source_Product__c != null);
 
     aforza__Relationship_Rule__c.forEach(obj => {
-      productIds.add(obj.aforza__Source_Product__c);
+      if (bomIds.has(obj.aforza__Target_Product__c)){
+        productIds.add(obj.aforza__Source_Product__c);
+      }
     });
 
     Product2.forEach(obj => {
-      if (productIds.has(obj.Id) || itemIds.has(obj.Id)){
+      if (productIds.has(obj.Id) || bomIds.has(obj.Id)){
           productMap.set(obj.Id, obj);
       }
     });
