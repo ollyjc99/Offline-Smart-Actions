@@ -5,55 +5,55 @@ function runAction(payload) {
     const productMap = new Map();
     const productIds = new Set();
 
-    const bomOrderItems = OrderItem.filter(obj => obj.aforza__Type__c == 'Vertriebsst\u00FCckliste');
+    let orderItemIds = OrderItem.map(obj => obj.Product2Id);
 
-    if (!bomOrderItems.length){
-      data.message = `Bestellung best\u00E4tigt \u2713`;
-      return payload;
-    }
-
-    const bomIds = new Set(bomOrderItems.map(obj => obj.Product2Id));
+    Product2.forEach(obj => {
+      if (orderItemIds.includes(obj.Id) && obj.aforza__Type__c == 'Vertriebsstückliste'){
+        productMap.set(obj.Id, obj);
+    }}); 
 
     aforza__Relationship_Rule__c.filter(obj => obj.aforza__Target_Product__c != null && obj.aforza__Source_Product__c != null);
 
     aforza__Relationship_Rule__c.forEach(obj => {
-      if (bomIds.has(obj.aforza__Target_Product__c)){
-        productIds.add(obj.aforza__Source_Product__c);
+      if (productMap.has(obj.aforza__Source_Product__c)){
+        productIds.add(obj.aforza__Target_Product__c);
       }
     });
 
     Product2.forEach(obj => {
-      if (productIds.has(obj.Id) || bomIds.has(obj.Id)){
+      if (productIds.has(obj.Id)){
           productMap.set(obj.Id, obj);
       }
     });
 
     aforza__Relationship_Rule__c.forEach(obj => {
 
-        let product = productMap.get(obj.aforza__Source_Product__c);
-        let bom = productMap.get(obj.aforza__Target_Product__c);
+      let product = productMap.get(obj.aforza__Source_Product__c);
+      let bom = productMap.get(obj.aforza__Target_Product__c);
 
-        if (!bomMap.has(product.Name)){
-          bomMap.set(product.Name, [' ' + bom.Name]);
-        }
-        else {
-          bomMap.get(product.Name).push(' '+ bom.Name);
-        }
-    });
+      if (product == null || bom == null) return;
+
+      if (!bomMap.has(product.Name)){
+        bomMap.set(product.Name, [' ' + bom.Name]);
+      }
+      else {
+        bomMap.get(product.Name).push(' '+ bom.Name);
+      }
+    })
 
     const duplicateProducts = new Map();
 
     for (const [product, boms] of bomMap) {
-      if (boms.length) {
+      if (boms.length > 1) {
         duplicateProducts.set(product, boms);
       }
     }
 
-    if (duplicateProducts){
+    if (bomMap.size){
       data.blockExecution = true;
       data.error = 'There are duplicate products in BOMs:\n';
 
-      for (const [product, boms] of duplicateProducts) {
+      for (const [product, boms] of bomMap) {
         data.error += ` - ${product}:${boms}\n  `;
       }
     }
