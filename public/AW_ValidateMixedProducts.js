@@ -3,4 +3,4 @@ function runAction(n){const{data:{related:{Product2:c,OrderItem:s}},data:t}=n,d=
 ${e} products:
 `,r.get(e).forEach(o=>{t.error+=`
  \u2022 ${o.Name}`}),t.error+=`
-`}else t.message="Bestellung best{u00E4}tigt {u2713}";return n}
+`}else t.message="Bestellung best\xE4tigt \u2713";return n}
