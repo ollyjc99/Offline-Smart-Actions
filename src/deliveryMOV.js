@@ -1,7 +1,7 @@
 function runAction(payload) {
     const { data: { record : {Pricebook2Id}, record, related: {Account: [Account], OrderItem, Product2, PricebookEntry, aforza__Inventory__c: [Inventory]}}, data } = payload; // Deconstruct payload
         let standardProductId, standardThreshold, standardPbe, outOfRouteProductId, outOfRouteThreshold, outOfRoutePbe;
-        const holidays = {'2023-04-07': ['All'], '2023-12-25': ['All'], '2023-12-08': ['All'], '2023-12-01': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-08-15': ['All'], '2023-06-10': ['All'], '2023-06-08': ['All'], '2023-04-25': ['All', 'Warehouse - Alcains'], '2023-05-01': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-05-22': ['Warehouse - Leiria'], '2023-06-13': ['Warehouse - Camarate'], '2023-05-23': ['Warehouse - Portalegre'], '2023-06-24': ['Warehouse - Porto'], '2023-06-29': ['Warehouse - Setúbal', 'Warehouse - Évora', 'Warehouse - Bombarral'], '2023-09-03': ['Warehouse - Algoz'], '2023-05-18': ['Warehouse - Beja'], '2023-07-04': ['Warehouse - Coimbra'], '2023-09-07': ['Warehouse - Faro']};
+        const holidays = {'2023-09-03': ['Warehouse - Algoz'], '2023-09-07': ['Warehouse - Faro'], '2023-08-15': ['Warehouse - Leiria', 'Warehouse - Alcains', 'Warehouse - Coimbra', 'Warehouse - Beja', 'Warehouse - Grândola', 'Warehouse - Setúbal', 'Warehouse - Portalegre', 'Warehouse - Porto', 'Warehouse - Odemira', 'Warehouse - Bombarral', 'Warehouse - Camarate'], '2023-12-25': ['All'], '2023-11-01': ['All'], '2023-10-05': ['All'], '2023-10-22': ['Warehouse - Grândola'], '2023-12-08': ['Warehouse - Alcains', 'Warehouse - Faro', 'Warehouse - Algoz', 'Warehouse - Bombarral', 'Warehouse - Setúbal', 'Warehouse - Beja', 'Warehouse - Grândola', 'Warehouse - Coimbra', 'Warehouse - Porto', 'Warehouse - Odemira', 'Warehouse - Évora', 'Warehouse - Portalegre', 'Warehouse - Leiria'], '2023-12-01': ['Warehouse - Alcains', 'Warehouse - Faro', 'Warehouse - Algoz', 'Warehouse - Bombarral', 'Warehouse - Setúbal', 'Warehouse - Beja', 'Warehouse - Grândola', 'Warehouse - Coimbra', 'Warehouse - Porto', 'Warehouse - Odemira', 'Warehouse - Évora', 'Warehouse - Portalegre', 'Warehouse - Leiria']};        
         let orderTotal = 0;
         let response = {orderChanged : false, reprice : false};
 
@@ -25,7 +25,8 @@ function runAction(payload) {
         OrderItem.forEach(sumOrderTotal);
 
         // Decide delivery date.
-        let dt, isHoliday, dayName, manualError;
+        let dt, isHoliday, dayName;
+        let manualError = false;
         let deliveryDate = record.EndDate;
         let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         let accountDeliveryDays = Account.Delivery_Day__c.split(';');
@@ -50,7 +51,7 @@ function runAction(payload) {
                 // If new delivery date is a holiday and a delivery day then select next day
                 if (isHoliday && accountDeliveryDays.includes(dayName)){
                     dt = incrementDeliveryDate(dt);
-                    dayName = days[dt.getDay()];                
+                    dayName = days[dt.getDay()];
                     isHoliday = false;
                 }
             }
@@ -69,13 +70,13 @@ function runAction(payload) {
         if(
             !new Set(['YDEV', 'YBLC', 'YDL1']).has(record.Type) &&
             (record.Type != 'YESL' && !["PT16", "PT17", "PT25"].includes(Account.Typology__c))
-        ){ 
+        ){
             var standardDelivery = accountDeliveryDays.includes(dayName) || ["PT16", "PT17", "PT25"].includes(Account.Typology__c);
             if(standardDelivery) {
                 record.Shipping_Conditions__c = 'ZA';
                 removeProduct(outOfRoutePbe);
                 // Order value exceeds threshold
-                if(orderTotal >= standardThreshold) {w
+                if(orderTotal >= standardThreshold) {
                     // Basket Exceeds Standard Delivery Threshold, no charge
                     data.message = 'A cesta excede o limite de entrega padrão, sem custo';
                     removeProduct(standardPbe);
@@ -103,10 +104,9 @@ function runAction(payload) {
             }
         } else {
             // Remove delivery product if its been added manually
+            data.message = '';
             removeProduct(standardPbe);
             removeProduct(outOfRoutePbe);
-
-            data.message = 'HELLO';
         }
         if(response.orderChanged) {
             data.updateDeviceData = {
