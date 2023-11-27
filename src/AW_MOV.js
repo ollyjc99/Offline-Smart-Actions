@@ -18,7 +18,7 @@ function runAction(payload) {
         data.error = `Die Bestellsumme liegt um weniger als der Mindestbestellwert: ${diff}`;
     } else {
         // Else, Order Validated
-        data.message = `Bestellung best\{u00E4}tigt \{u2713}`;
+        data.message = `Bestellung best\u00E4tigt \u2713`;
     }
     return payload;
 }

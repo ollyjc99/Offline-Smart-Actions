@@ -2,11 +2,18 @@ function runAction(payload) {
 
     const { data: {record, related: {Account: [account], Product2, OrderItem, aforza__Outlet_Asset__c}}, data} = payload;
 
-    const pharmacyTypeId = '0122z000002QGJyAAO';
-    const medProfTypeId = '0123L000000RQhQQAW';
-    const salespersonTypeId = '0122z000002dp2PAAQ';
+    // Unfortunate hard-coding of all record type Ids due to a limitation with the Aforza App
+    const pharmacyTypeIdDEV = '0122z000002QGJyAAO', pharmacyTypeIdUAT = '0123L000000RQhRQAW', pharmacyTypeIdPRD = '';
+    const medProfTypeIdDEV = '0123L000000RQhQQAW', medProfTypeIdUAT = '0123L000000c7uDQAQ', medProfTypeIdPRD = '';
+    const masterMedProfTypeIdDEV = '0123L000000RQhQQAW', masterMedProfTypeIdUAT = '0123L000000bxrXQAQ', masterMedProfTypeIdPRD = '';
+    const salespersonTypeIdDEV = '0122z000002dp2PAAQ', salespersonTypeIdUAT = '0123L000000RoylQAC', salespersonTypeIdPRD = '';
 
-    if (!new Set(['Product Order', 'Sample Order']).has(record.Type) && !new Set([pharmacyTypeId, medProfTypeId, salespersonTypeId]).has(account.RecordTypeId) && !new Set(['DE', 'AT', 'CH']).has(account.AW_Country__c)) {
+    const pharmacyRecordTypes = new Set([pharmacyTypeIdDEV, pharmacyTypeIdUAT, pharmacyTypeIdPRD]);
+    const medProfRecordTypes = new Set([medProfTypeIdDEV, medProfTypeIdUAT, medProfTypeIdPRD]);
+    const masterMedProfRecordTypes = new Set([masterMedProfTypeIdDEV, masterMedProfTypeIdUAT, masterMedProfTypeIdPRD]);
+    const salespersonRecordTypes = new Set([salespersonTypeIdDEV, salespersonTypeIdUAT, salespersonTypeIdPRD]);
+
+    if (!new Set(['Product Order', 'Sample Order']).has(record.Type) || !new Set([...pharmacyRecordTypes, ...medProfRecordTypes, ...masterMedProfRecordTypes, ...salespersonRecordTypes]).has(account.RecordTypeId)) {
         return payload;
     }
 
@@ -57,10 +64,10 @@ function runAction(payload) {
 
             let product = productMap.get(oi.Product2Id);
 
-            if (record.Type == 'Product Order' && account.RecordTypeId == pharmacyTypeId){
+            if (record.Type == 'Product Order' && pharmacyRecordTypes.has(account.RecordTypeId)){
                 itemMap.get('Product').push(oi);
             }
-            if ((record.Type == 'Sample Order' && account.RecordTypeId == medProfTypeId && product.AW_Is_Restricted_Drug__c) || record.Type == 'Product Order' && account.RecordTypeId == salespersonTypeId){
+            if ((record.Type == 'Sample Order' && new Set([...medProfRecordTypes, masterMedProfRecordTypes]).has(account.RecordTypeId) && product.AW_Is_Restricted_Drug__c) || record.Type == 'Product Order' && salespersonRecordTypes.has(account.RecordTypeId)){
                 itemMap.get('Outlet Asset').push(oi);
             }
         });
@@ -104,10 +111,10 @@ function runAction(payload) {
         let limit;
         let product = productMap.get(oa.aforza__Product__c);
         
-        if (account.RecordTypeId == medProfTypeId){
+        if (new Set([...medProfRecordTypes, masterMedProfRecordTypes]).has(account.RecordTypeId)){
             limit = product['AW_Doctor_Limit_' + accountCountry + '__c'];
         }
-        else if (account.RecordTypeId == salespersonTypeId){
+        else if (salespersonRecordTypes.has(account.RecordTypeId)){
             limit = product.AW_FA_Yearly_Limit__c;
         }
         return limit;
